@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gym Analytics Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="header">
+    <h1>Gym Analytics Dashboard</h1>
+    <p>Track attendance, revenue & class popularity</p>
+  </header>
+
+  <main class="container">
+
+    <!-- Upload Section -->
+    <section class="upload-section">
+      <h2>Upload CSV Data</h2>
+      <form class="upload-form" method="POST" enctype="multipart/form-data">
+          <input type="file" name="file" required />
+          <button type="submit">Upload</button>
+      </form>
+    </section>
+
+    <!-- Stats Cards -->
+    <section class="stats-grid">
+      <div class="card">
+        <h3>Total Revenue</h3>
+        <p>₹ 57,60,000</p>
+      </div>
+      <div class="card">
+        <h3>Active Members</h3>
+        <p>320</p>
+      </div>
+      <div class="card">
+        <h3>Peak Hours</h3>
+        <p>6 AM - 9 AM</p>
+      </div>
+      <div class="card">
+        <h3>Popular Class</h3>
+        <p>Zumba</p>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <canvas id="attendanceChart"></canvas>
+    <canvas id="classChart"></canvas>
+    <canvas id="revenueChart"></canvas>
+
+    <!-- Table -->
+    <section class="table-section">
+      <h2>Inactive Members</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Member ID</th>
+            <th>Name</th>
+            <th>Last Visit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>101</td>
+            <td>Rahul Sharma</td>
+            <td>2025-11-10</td>
+          </tr>
+          <tr>
+            <td>102</td>
+            <td>Ram Verma</td>
+            <td>2025-10-25</td>
+          </tr>
+          <tr>
+            <td>103</td>
+            <td>Aman Singh</td>
+            <td>2025-09-30</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Gym Analytics System</p>
+  </footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+      const labels = {{ labels | tojson | safe }};
+      const attendanceData = {{ attendance | tojson | safe }};
+      const revenueData = {{ revenue | tojson | safe }};
+      const classLabels = {{ class_labels | tojson | safe }};
+      const classData = {{ class_data | tojson | safe }};
+
+      if (labels) {
+
+          // Attendance Chart
+          new Chart(document.getElementById("attendanceChart"), {
+              type: "line",
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      label: "Attendance",
+                      data: attendanceData
+                  }]
+              }
+          });
+
+          // Revenue Chart
+          new Chart(document.getElementById("revenueChart"), {
+              type: "bar",
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      label: "Revenue",
+                      data: revenueData
+                  }]
+              }
+          });
+
+          // Class Popularity
+          new Chart(document.getElementById("classChart"), {
+              type: "pie",
+              data: {
+                  labels: classLabels,
+                  datasets: [{
+                      data: classData
+                  }]
+              }
+          });
+      }
+  </script>
+
+</body>
+</html>
