@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Inactive Members{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="section-title">
+        <h2>Inactive Members</h2>
+        <a href="/inactive_members/export" class="btn-export">⬇ Export CSV</a>
+        {% if inactive_members %}
+        <form method="POST" action="/inactive_members/send_reminders" style="display:inline;" onsubmit="return confirm('Send reminder emails to all inactive members?')">
+            <button type="submit" class="btn-export" style="margin-left:8px;">📧 Send Reminders</button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="table-section card">
+        <h3>Members with No Attendance in the Last 30 Days</h3>
+        {% if inactive_members %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Member ID</th>
+                    <th>Name</th>
+                    {% if inactive_members and 'Email' in inactive_members[0] %}
+                    <th>Email</th>
+                    {% endif %}
+                    {% if inactive_members and 'Phone' in inactive_members[0] %}
+                    <th>Phone</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in inactive_members %}
+                <tr>
+                    <td>{{ member['Member_ID'] }}</td>
+                    <td>{{ member['Name'] }}</td>
+                    {% if 'Email' in member %}
+                    <td>{{ member['Email'] }}</td>
+                    {% endif %}
+                    {% if 'Phone' in member %}
+                    <td>{{ member['Phone'] }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No inactive members found in the last 30 days.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

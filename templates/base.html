@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gym Analytics{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <h1>🏋️ Gym Analytics</h1>
+                <p>Track attendance, revenue & class popularity</p>
+            </div>
+            <nav>
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/performance" class="nav-link">Performance</a>
+                <a href="/inactive_members" class="nav-link">Inactive Members</a>
+                <a href="/complaints" class="nav-link">Complaints</a>
+                <a href="/feedback" class="nav-link">Feedback</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>© 2026 Gym Analytics System</p>
+    </footer>
+</body>
+</html>

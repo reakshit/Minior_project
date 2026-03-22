@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="section-title"><h2>Submit Feedback</h2></div>
+    <section class="upload-section card">
+      <form class="upload-form" method="POST">
+          <div class="form-field">
+            <input type="text" name="member_id" placeholder="Member ID" maxlength="50" required />
+          </div>
+          <div class="form-field full-width">
+            <textarea name="feedback_text" placeholder="Your Feedback" rows="5" maxlength="1000" required></textarea>
+          </div>
+          <div class="form-field">
+            <input type="number" name="rating" placeholder="Rating (1-5)" min="1" max="5" required />
+          </div>
+          <button type="submit">Submit Feedback</button>
+      </form>
+    </section>
+
+    <div class="section-title"><h2>All Feedback</h2></div>
+    <section class="table-section card">
+      <table>
+        <thead>
+          <tr>
+            <th>Member ID</th>
+            <th>Feedback</th>
+            <th>Rating</th>
+            <th>Timestamp</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i, fb in enumerate(feedbacks) %}
+          <tr>
+            <td>{{ fb['member_id'] }}</td>
+            <td>{{ fb['feedback_text'] }}</td>
+            <td>{{ fb['rating'] }}</td>
+            <td>{{ fb['timestamp'] }}</td>
+            <td>
+              <form method="POST" action="/feedback/delete/{{ i }}" onsubmit="return confirm('Delete this feedback?')">
+                <button type="submit" class="btn-delete">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+</div>
+{% endblock %}

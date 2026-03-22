@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Tracking{% endblock %}
+
+{% block content %}
+    <section class="upload-section">
+      <h2>Select a Member</h2>
+      <form class="upload-form" method="POST">
+        <select name="member_name" required>
+          <option value="">Select a member</option>
+          {% for member in members %}
+          <option value="{{ member }}" {% if member == member_name %}selected{% endif %}>{{ member }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Show Performance</button>
+      </form>
+    </section>
+
+    <div id="cal-heatmap"></div>
+    <p id="heatmap-msg"></p>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/cal-heatmap/dist/cal-heatmap.css">
+    <script src="https://unpkg.com/cal-heatmap/dist/cal-heatmap.min.js"></script>
+
+    <script>
+        const heatmapData = {{ heatmap_data | tojson | safe }};
+        const memberSelected = {{ member_name | tojson | safe }};
+
+        if (Object.keys(heatmapData).length > 0) {
+            const dataSource = Object.entries(heatmapData).map(([ts, val]) => ({
+                date: +ts * 1000,
+                value: val
+            }));
+
+            const firstTs = Math.min(...Object.keys(heatmapData).map(Number));
+
+            const cal = new CalHeatmap();
+            cal.paint({
+                itemSelector: "#cal-heatmap",
+                range: 12,
+                date: { start: new Date(firstTs * 1000) },
+                domain: { type: "month" },
+                subDomain: { type: "day", radius: 2 },
+                data: {
+                    source: dataSource,
+                    x: "date",
+                    y: "value",
+                    defaultValue: 0
+                },
+                scale: {
+                    color: {
+                        range: ["#ef4444", "#22c55e"],
+                        domain: [0, 1],
+                        type: "linear"
+                    }
+                }
+            });
+        } else if (memberSelected) {
+            document.getElementById("heatmap-msg").textContent = "No attendance data for the selected member.";
+        } else {
+            document.getElementById("heatmap-msg").textContent = "Please select a member to view their performance heatmap.";
+        }
+    </script>
+{% endblock %}

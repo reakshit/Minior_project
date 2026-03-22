@@ -1,93 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gym Analytics Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-  <header class="header">
-    <h1>Gym Analytics Dashboard</h1>
-    <p>Track attendance, revenue & class popularity</p>
-  </header>
+{% block title %}Dashboard{% endblock %}
 
-  <main class="container">
-
-    <!-- Upload Section -->
+{% block content %}
+    
     <section class="upload-section">
       <h2>Upload CSV Data</h2>
-      <form class="upload-form" method="POST" enctype="multipart/form-data">
-          <input type="file" name="file" required />
-          <button type="submit">Upload</button>
+      <form class="upload-form" method="POST" enctype="multipart/form-data" id="uploadForm">
+          <input type="file" name="file" accept=".csv" required />
+          <button type="submit" id="uploadBtn">Upload</button>
       </form>
+      <div id="uploadSpinner" class="spinner" style="display:none;">Uploading, please wait…</div>
     </section>
 
-    <!-- Stats Cards -->
+    {% if not data_loaded %}
+    <div class="no-data-msg">📂 Upload a CSV file to see stats and charts.</div>
+    {% endif %}
+
+    
     <section class="stats-grid">
       <div class="card">
         <h3>Total Revenue</h3>
-        <p>₹ 57,60,000</p>
+        <p>₹ {{ "{:,}".format(total_revenue) }}</p>
       </div>
       <div class="card">
         <h3>Active Members</h3>
-        <p>320</p>
-      </div>
-      <div class="card">
-        <h3>Peak Hours</h3>
-        <p>6 AM - 9 AM</p>
+        <p>{{ active_members }}</p>
       </div>
       <div class="card">
         <h3>Popular Class</h3>
-        <p>Zumba</p>
+        <p>{{ popular_class }}</p>
       </div>
     </section>
 
-    <!-- Charts -->
-    <canvas id="attendanceChart"></canvas>
-    <canvas id="classChart"></canvas>
-    <canvas id="revenueChart"></canvas>
+    
+    {% if data_loaded %}
+    <section class="upload-section" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <label>From: <input type="date" id="dateFrom"></label>
+      <label>To: <input type="date" id="dateTo"></label>
+      <button onclick="applyDateFilter()">Apply</button>
+      <button onclick="resetDateFilter()">Reset</button>
+    </section>
+    {% endif %}
 
-    <!-- Table -->
-    <section class="table-section">
-      <h2>Inactive Members</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Member ID</th>
-            <th>Name</th>
-            <th>Last Visit</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>101</td>
-            <td>Rahul Sharma</td>
-            <td>2025-11-10</td>
-          </tr>
-          <tr>
-            <td>102</td>
-            <td>Ram Verma</td>
-            <td>2025-10-25</td>
-          </tr>
-          <tr>
-            <td>103</td>
-            <td>Aman Singh</td>
-            <td>2025-09-30</td>
-          </tr>
-        </tbody>
-      </table>
+    
+    <section class="charts">
+      <div class="chart-box">
+        <div id="attendanceChartContainer" class="expandable-chart">
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div id="classChartContainer" class="expandable-chart">
+          <canvas id="classChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div id="revenueChartContainer" class="expandable-chart">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
     </section>
 
-  </main>
 
-  <footer class="footer">
-    <p>© 2026 Gym Analytics System</p>
-  </footer>
+
+  
+  <div id="chartOverlay" class="chart-overlay">
+    <div id="expandedChartContainer" class="expanded-chart-container">
+      
+    </div>
+  </div>
 
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
 
   <script>
       const labels = {{ labels | tojson | safe }};
@@ -96,44 +82,243 @@
       const classLabels = {{ class_labels | tojson | safe }};
       const classData = {{ class_data | tojson | safe }};
 
+      let attendanceChartInstance;
+      let revenueChartInstance;
+      let classChartInstance;
+      let expandedChartInstance; // To hold the currently expanded chart instance
+
+      // Helper function to calculate average
+      function calculateAverage(data) {
+        if (!data || data.length === 0) return 0;
+        const sum = data.reduce((a, b) => a + b, 0);
+        return sum / data.length;
+      }
+
+      function renderChart(canvasElement, chartType, chartLabels, chartData, chartLabelText = '', includeAverageLine = false) {
+        if (!canvasElement) return null;
+
+        const chartConfig = {
+          type: chartType,
+          data: {
+            labels: chartLabels,
+            datasets: []
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {},
+            plugins: {
+              annotation: {
+                annotations: []
+              }
+            }
+          }
+        };
+
+        if (chartType === 'pie') {
+          chartConfig.data.datasets.push({
+            data: chartData,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 159, 64, 0.7)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+          });
+        } else {
+          // Find min and max for highlighting
+          let minVal = Infinity;
+          let maxVal = -Infinity;
+          let minIndex = -1;
+          let maxIndex = -1;
+
+          chartData.forEach((value, index) => {
+            if (value < minVal) {
+              minVal = value;
+              minIndex = index;
+            }
+            if (value > maxVal) {
+              maxVal = value;
+              maxIndex = index;
+            }
+          });
+
+          const pointBackgroundColors = Array(chartData.length).fill(chartType === 'bar' ? 'rgba(59, 130, 246, 0.7)' : 'rgba(59, 130, 246, 0.2)');
+          const pointBorderColors = Array(chartData.length).fill('rgba(30, 64, 175, 1)');
+          const pointRadii = Array(chartData.length).fill(3); // Default point radius
+
+          if (minIndex !== -1) {
+            pointBackgroundColors[minIndex] = 'red';
+            pointBorderColors[minIndex] = 'darkred';
+            pointRadii[minIndex] = 6;
+          }
+          if (maxIndex !== -1) {
+            pointBackgroundColors[maxIndex] = 'green';
+            pointBorderColors[maxIndex] = 'darkgreen';
+            pointRadii[maxIndex] = 6;
+          }
+
+          chartConfig.data.datasets.push({
+            label: chartLabelText,
+            data: chartData,
+            backgroundColor: chartType === 'bar' ? pointBackgroundColors : 'rgba(59, 130, 246, 0.2)', // Bar charts can have individual bar colors
+            borderColor: 'rgba(30, 64, 175, 1)',
+            borderWidth: 1,
+            fill: chartType === 'line', // Fill for line chart
+            pointBackgroundColor: pointBackgroundColors,
+            pointBorderColor: pointBorderColors,
+            pointRadius: pointRadii,
+            pointHoverRadius: 8
+          });
+          chartConfig.options.scales = {
+            y: {
+              beginAtZero: true
+            }
+          };
+
+          // Add average line for line and bar charts if requested
+          if (includeAverageLine) {
+            const average = calculateAverage(chartData);
+            chartConfig.options.plugins.annotation.annotations.push({
+              type: 'line',
+              mode: 'horizontal',
+              scaleID: 'y',
+              value: average,
+              borderColor: 'rgba(255, 99, 132, 0.8)', // Red for average line
+              borderWidth: 2,
+              borderDash: [5, 5], // Dotted line
+              label: {
+                enabled: true,
+                content: `Avg: ${average.toFixed(2)}`,
+                position: 'end'
+              }
+            });
+          }
+        }
+
+        return new Chart(canvasElement, chartConfig);
+      }
+
       if (labels) {
+          const attendanceCanvas = document.getElementById("attendanceChart");
+          const revenueCanvas = document.getElementById("revenueChart");
+          const classCanvas = document.getElementById("classChart");
 
-          // Attendance Chart
-          new Chart(document.getElementById("attendanceChart"), {
-              type: "line",
-              data: {
-                  labels: labels,
-                  datasets: [{
-                      label: "Attendance",
-                      data: attendanceData
-                  }]
-              }
-          });
+          if (attendanceCanvas) {
+            attendanceChartInstance = renderChart(attendanceCanvas, "line", labels, attendanceData, "Attendance", false);
+          }
+          if (revenueCanvas) {
+            revenueChartInstance = renderChart(revenueCanvas, "bar", labels, revenueData, "Revenue", false);
+          }
+          if (classCanvas) {
+            classChartInstance = renderChart(classCanvas, "pie", classLabels, classData);
+          }
+      }
 
-          // Revenue Chart
-          new Chart(document.getElementById("revenueChart"), {
-              type: "bar",
-              data: {
-                  labels: labels,
-                  datasets: [{
-                      label: "Revenue",
-                      data: revenueData
-                  }]
-              }
-          });
+      const chartOverlay = document.getElementById("chartOverlay");
+      const expandedChartContainer = document.getElementById("expandedChartContainer");
+      const expandableCharts = document.querySelectorAll(".expandable-chart");
 
-          // Class Popularity
-          new Chart(document.getElementById("classChart"), {
-              type: "pie",
-              data: {
-                  labels: classLabels,
-                  datasets: [{
-                      data: classData
-                  }]
-              }
-          });
+      expandableCharts.forEach(chartWrapper => {
+        chartWrapper.style.cursor = 'pointer';
+        chartWrapper.addEventListener("click", () => {
+          if (expandedChartInstance) {
+            expandedChartInstance.destroy();
+            expandedChartContainer.innerHTML = '';
+          }
+
+          const originalCanvasId = chartWrapper.querySelector('canvas').id;
+          let chartType, currentLabels, currentData, chartLabelText;
+
+          // Determine which chart was clicked and get its data
+          if (originalCanvasId === "attendanceChart") {
+            chartType = "line";
+            currentLabels = labels;
+            currentData = attendanceData;
+            chartLabelText = "Attendance";
+          } else if (originalCanvasId === "revenueChart") {
+            chartType = "bar";
+            currentLabels = labels;
+            currentData = revenueData;
+            chartLabelText = "Revenue";
+          } else if (originalCanvasId === "classChart") {
+            chartType = "pie";
+            currentLabels = classLabels;
+            currentData = classData;
+            chartLabelText = ""; // Pie charts don't usually have a single dataset label
+          }
+
+          const newExpandedCanvas = document.createElement('canvas');
+          newExpandedCanvas.id = 'dynamicExpandedChart';
+          expandedChartContainer.appendChild(newExpandedCanvas);
+
+          expandedChartInstance = renderChart(newExpandedCanvas, chartType, currentLabels, currentData, chartLabelText, true);
+          
+          chartOverlay.classList.add("visible");
+          document.body.style.overflow = "hidden";
+        });
+      });
+
+      if (chartOverlay) {
+        chartOverlay.addEventListener("click", (event) => {
+            if (event.target === chartOverlay) {
+                if (expandedChartInstance) {
+                    expandedChartInstance.destroy();
+                    expandedChartContainer.innerHTML = '';
+                }
+                chartOverlay.classList.remove("visible");
+                document.body.style.overflow = "";
+            }
+        });
+      }
+      document.getElementById("uploadForm").addEventListener("submit", function() {
+        document.getElementById("uploadBtn").disabled = true;
+        document.getElementById("uploadSpinner").style.display = "block";
+      });
+
+      function applyDateFilter() {
+        const from = document.getElementById("dateFrom").value;
+        const to = document.getElementById("dateTo").value;
+        if (!from && !to) return;
+
+        const filtered = labels.reduce((acc, label, i) => {
+          if ((!from || label >= from) && (!to || label <= to)) {
+            acc.labels.push(label);
+            acc.attendance.push(attendanceData[i]);
+            acc.revenue.push(revenueData[i]);
+          }
+          return acc;
+        }, { labels: [], attendance: [], revenue: [] });
+
+        attendanceChartInstance.data.labels = filtered.labels;
+        attendanceChartInstance.data.datasets[0].data = filtered.attendance;
+        attendanceChartInstance.update();
+
+        revenueChartInstance.data.labels = filtered.labels;
+        revenueChartInstance.data.datasets[0].data = filtered.revenue;
+        revenueChartInstance.update();
+      }
+
+      function resetDateFilter() {
+        document.getElementById("dateFrom").value = "";
+        document.getElementById("dateTo").value = "";
+        attendanceChartInstance.data.labels = labels;
+        attendanceChartInstance.data.datasets[0].data = attendanceData;
+        attendanceChartInstance.update();
+        revenueChartInstance.data.labels = labels;
+        revenueChartInstance.data.datasets[0].data = revenueData;
+        revenueChartInstance.update();
       }
   </script>
-
-</body>
-</html>
+{% endblock %}

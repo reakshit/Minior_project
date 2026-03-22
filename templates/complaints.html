@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Complaints{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="section-title"><h2>Submit a Complaint</h2></div>
+    <section class="upload-section card">
+      <form class="upload-form" method="POST">
+          <div class="form-field">
+            <input type="text" name="member_id" placeholder="Member ID" maxlength="50" required />
+          </div>
+          <div class="form-field full-width">
+            <textarea name="complaint_text" placeholder="Your Complaint" rows="5" maxlength="1000" required></textarea>
+          </div>
+          <button type="submit">Submit Complaint</button>
+      </form>
+    </section>
+
+    <div class="section-title"><h2>All Complaints</h2></div>
+    <section class="table-section card">
+      <table>
+        <thead>
+          <tr>
+            <th>Member ID</th>
+            <th>Complaint</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i, complaint in enumerate(complaints) %}
+          <tr>
+            <td>{{ complaint['member_id'] }}</td>
+            <td>{{ complaint['complaint_text'] }}</td>
+            <td>{{ complaint['status'] }}</td>
+            <td>{{ complaint['timestamp'] }}</td>
+            <td>
+              <form method="POST" action="/complaints/delete/{{ i }}" onsubmit="return confirm('Delete this complaint?')">
+                <button type="submit" class="btn-delete">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+</div>
+{% endblock %}
