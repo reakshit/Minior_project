@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — Gym Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a26;
+  --border: #2a2a3a;
+  --accent: #e8ff47;
+  --accent2: #ff6b35;
+  --accent3: #47c8ff;
+  --text: #f0f0f8;
+  --muted: #7070a0;
+  --success: #47ffb0;
+  --danger: #ff4770;
+  --warning: #ffb047;
+  --sidebar-w: 240px;
+  --topbar-h: 64px;
+  --bottom-nav-h: 64px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── LANDING / LOGIN ─── */
+#landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  padding: 24px 16px;
+}
+#landing::before {
+  content:'';
+  position:absolute;inset:0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #e8ff4720 0%, transparent 60%),
+              radial-gradient(ellipse 50% 40% at 80% 80%, #ff6b3515 0%, transparent 50%);
+}
+.landing-logo {
+  font-family:'Bebas Neue',sans-serif;
+  font-size: clamp(52px, 12vw, 96px);
+  letter-spacing: 8px;
+  color: var(--accent);
+  text-shadow: 0 0 60px #e8ff4740;
+  animation: logoIn .8s ease both;
+  text-align: center;
+}
+.landing-tagline {
+  color: var(--muted);
+  font-size: clamp(10px, 2.5vw, 16px);
+  letter-spacing: clamp(1px, 0.8vw, 4px);
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  animation: logoIn .8s .2s ease both;
+  text-align: center;
+}
+@keyframes logoIn {
+  from { opacity:0; transform: translateY(30px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 220px));
+  gap: 16px;
+  animation: logoIn .8s .4s ease both;
+  width: 100%;
+  max-width: 700px;
+}
+.role-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .3s;
+  position: relative;
+  overflow: hidden;
+}
+.role-card::before {
+  content:'';
+  position:absolute;inset:0;
+  background: var(--accent-c,var(--accent));
+  opacity:0;
+  transition: opacity .3s;
+}
+.role-card:hover { border-color: var(--accent-c,var(--accent)); transform: translateY(-4px); box-shadow: 0 20px 40px #0008; }
+.role-card:hover::before { opacity:.06; }
+.role-icon { font-size: clamp(32px, 6vw, 48px); margin-bottom:12px; }
+.role-title { font-family:'Bebas Neue',sans-serif; font-size: clamp(20px, 4vw, 28px); letter-spacing:2px; }
+.role-desc { color: var(--muted); font-size:11px; margin-top:8px; line-height:1.6; }
+
+/* ─── APP SHELL ─── */
+#app { display:none; min-height:100vh; }
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  display:none;
+  position:fixed;inset:0;
+  background:#000b;
+  z-index:99;
+}
+.sidebar-overlay.open { display:block; }
+
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top:0; left:0; bottom:0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar-logo {
+  padding: 20px 20px;
+  font-family: 'Bebas Neue',sans-serif;
+  font-size: 26px;
+  letter-spacing:3px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-close-btn {
+  display:none;
+  background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;
+}
+.sidebar-role-badge {
+  margin: 12px 16px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+}
+.nav-section { padding: 8px 0; }
+.nav-label { padding: 8px 20px 4px; font-size: 10px; letter-spacing:2px; color: var(--muted); text-transform:uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap:12px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: all .2s;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-item:hover { color: var(--text); background: #ffffff08; }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: #e8ff4710; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items:center; gap:12px;
+  cursor: pointer;
+}
+.avatar {
+  width:36px;height:36px;border-radius:50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:18px;color:#000;
+  flex-shrink:0;
+}
+.user-info .name { font-size:13px; font-weight:600; }
+.user-info .role { font-size:11px; color:var(--muted); }
+
+/* ─── MAIN CONTENT ─── */
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  padding: 0 24px;
+  height: var(--topbar-h);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  position: sticky; top:0; z-index:50;
+  gap: 12px;
+}
+.hamburger-btn {
+  display:none;
+  background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;
+  padding:6px;border-radius:8px;flex-shrink:0;
+  -webkit-tap-highlight-color: transparent;
+}
+.hamburger-btn:hover { background:#ffffff10; }
+.page-title { font-family:'Bebas Neue',sans-serif; font-size: clamp(22px, 4vw, 32px); letter-spacing:2px; flex:1; }
+.topbar-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+
+.content { padding: 24px; flex:1; }
+
+/* ─── BOTTOM NAV (mobile only) ─── */
+.bottom-nav {
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--bottom-nav-h);
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  z-index:90;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.bottom-nav::-webkit-scrollbar { display:none; }
+.bottom-nav-inner {
+  display:flex;
+  height:100%;
+  min-width:max-content;
+  padding:0 4px;
+}
+.bottom-nav-item {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;min-width:64px;padding:0 8px;
+  cursor:pointer;color:var(--muted);font-size:10px;
+  transition:color .2s;
+  -webkit-tap-highlight-color:transparent;
+  border-top:2px solid transparent;
+}
+.bottom-nav-item.active { color:var(--accent); border-top-color:var(--accent); }
+.bottom-nav-icon { font-size:20px; }
+
+/* ─── COMPONENTS ─── */
+.btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px; font-weight:600;
+  transition: all .2s;
+  display: inline-flex; align-items:center; gap:8px;
+}
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #fff066; transform:translateY(-1px); box-shadow: 0 8px 20px #e8ff4730; }
+.btn-danger { background: var(--danger); color:#fff; }
+.btn-danger:hover { background: #ff6690; }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--card); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-outline-accent { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+.btn-outline-accent:hover { background:var(--accent); color:#000; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.card-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; margin-bottom:16px; }
+
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  position: relative; overflow: hidden;
+}
+.stat-card::after {
+  content:'';
+  position:absolute;right:-20px;top:-20px;
+  width:80px;height:80px;border-radius:50%;
+  background: var(--c,var(--accent));
+  opacity:.08;
+}
+.stat-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.stat-value { font-family:'Bebas Neue',sans-serif; font-size:40px; letter-spacing:2px; color:var(--c,var(--accent)); line-height:1; }
+.stat-sub { font-size:12px; color:var(--muted); margin-top:6px; }
+
+.badge {
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;
+  display:inline-block;
+}
+.badge-success { background:#47ffb020; color:var(--success); }
+.badge-danger  { background:#ff477020; color:var(--danger); }
+.badge-warning { background:#ffb04720; color:var(--warning); }
+.badge-info    { background:#47c8ff20; color:var(--accent3); }
+.badge-accent  { background:#e8ff4720; color:var(--accent); }
+
+table { width:100%; border-collapse:collapse; min-width:500px; }
+th {
+  padding:10px 16px; text-align:left;
+  font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  white-space:nowrap;
+}
+td { padding:12px 16px; border-bottom:1px solid #1e1e2e; font-size:13px; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background:#ffffff04; }
+/* Scrollable table wrapper is applied via JS */
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
+
+.input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  width: 100%;
+  transition: border .2s;
+}
+.input:focus { outline:none; border-color:var(--accent); }
+.input-group { margin-bottom:16px; }
+.input-label { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; display:block; }
+select.input { cursor:pointer; }
+
+/* ─── TABS ─── */
+.tabs { display:flex; gap:4px; margin-bottom:24px; background:var(--surface); padding:4px; border-radius:10px; width:fit-content; }
+.tab {
+  padding:8px 20px; border-radius:7px; cursor:pointer;
+  font-size:13px; font-weight:500; color:var(--muted);
+  transition:all .2s;
+}
+.tab.active { background:var(--card); color:var(--text); }
+
+/* ─── SCHEDULE GRID ─── */
+.schedule-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; border:1px solid var(--border); }
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7,minmax(90px,1fr));
+  min-width: 720px;
+}
+.sched-header {
+  background: var(--surface);
+  padding:12px;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  border-bottom:1px solid var(--border);
+  border-right:1px solid var(--border);
+}
+.sched-time {
+  background:var(--surface);
+  padding:10px 12px;
+  font-size:11px;
+  color:var(--muted);
+  font-family:'DM Mono',monospace;
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.sched-cell {
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:4px;
+  min-height:52px;
+  position:relative;
+}
+.sched-event {
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  height:100%;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.sched-event:hover { transform:scale(1.02); filter:brightness(1.1); }
+.ev-cardio  { background:#47c8ff22; color:var(--accent3); border-left:3px solid var(--accent3); }
+.ev-yoga    { background:#ff6b3522; color:var(--accent2); border-left:3px solid var(--accent2); }
+.ev-strength{ background:#e8ff4722; color:var(--accent); border-left:3px solid var(--accent); }
+.ev-zumba  { background:#47ffb022; color:var(--success); border-left:3px solid var(--success); }
+.ev-cross   { background:#ff477022; color:var(--danger); border-left:3px solid var(--danger); }
+
+/* ─── PROGRESS BAR ─── */
+.progress-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:3px; background:var(--accent); transition:width .6s ease; }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  display:none;position:fixed;inset:0;background:#000a;z-index:1000;
+  align-items:flex-end;justify-content:center;
+  padding:16px;
+}
+.modal-overlay.open { display:flex; animation: fadeIn .2s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:28px 24px;width:100%;max-width:500px;
+  animation: slideUp .25s ease;
+  max-height:90vh;overflow-y:auto;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+.modal-title { font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;margin-bottom:20px; }
+
+/* ─── PAGES ─── */
+.page { display:none; }
+.page.active { display:block; animation: pageIn .3s ease; }
+@keyframes pageIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── NOTIFICATION ─── */
+.notif {
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--card);border:1px solid var(--border);
+  padding:14px 20px;border-radius:10px;
+  font-size:13px;max-width:320px;
+  animation: notifIn .3s ease;
+  display:flex;gap:10px;align-items:center;
+}
+.notif.success { border-color:var(--success); }
+.notif.error   { border-color:var(--danger); }
+@keyframes notifIn { from{transform:translateX(50px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+/* ─── PERFORMANCE HEATMAP ─── */
+.heatmap { display:flex;flex-wrap:wrap;gap:3px; }
+.hm-cell { width:14px;height:14px;border-radius:2px;background:var(--border); transition:all .2s; }
+.hm-cell:hover { transform:scale(1.3); }
+.hm-1 { background:#e8ff4740; }
+.hm-2 { background:#e8ff4780; }
+.hm-3 { background:#e8ff47; }
+
+/* ─── RATING STARS ─── */
+.stars { color:#ffb047; font-size:16px; letter-spacing:2px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* membership card */
+.member-card {
+  background: linear-gradient(135deg, #1a1a26, #12121a);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative; overflow:hidden;
+}
+.member-card::before {
+  content:'FITCORE';
+  position:absolute;right:-20px;top:50%;transform:translateY(-50%);
+  font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:4px;
+  color:var(--accent);opacity:.04;
+}
+
+.chip {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:20px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:12px;cursor:pointer;transition:all .2s;
+}
+.chip.active { background:var(--accent);color:#000;border-color:var(--accent);font-weight:600; }
+
+.grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+.grid-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px; }
+
+/* ─── RESPONSIVE MEDIA QUERIES ─── */
+
+/* Tablet: 768px – 1024px */
+@media (max-width:1024px) {
+  .stat-grid { grid-template-columns:repeat(2,1fr); }
+  .grid-3 { grid-template-columns:1fr 1fr; }
+  .content { padding:20px; }
+}
+
+/* Mobile: ≤ 768px */
+@media (max-width:768px) {
+  /* Landing */
+  .role-grid { grid-template-columns:1fr; max-width:320px; }
+  .landing-tagline { letter-spacing:1px; font-size:11px; margin-bottom:28px; }
+
+  /* Sidebar off-canvas */
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-close-btn { display:block; }
+
+  /* Main shifts when sidebar is desktop (never on mobile) */
+  .main { margin-left:0; padding-bottom: var(--bottom-nav-h); }
+
+  /* Topbar */
+  .topbar { padding:0 16px; }
+  .hamburger-btn { display:flex; align-items:center; justify-content:center; }
+  .topbar-actions .btn span:not(.btn-icon) { display:none; }
+
+  /* Content */
+  .content { padding:16px 12px; }
+
+  /* Grids all collapse to single column */
+  .stat-grid { grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+  .grid-2 { grid-template-columns:1fr; gap:12px; }
+  .grid-3 { grid-template-columns:1fr; gap:12px; }
+
+  /* Stat cards compact */
+  .stat-card { padding:14px 16px; }
+  .stat-value { font-size:30px; }
+
+  /* Cards */
+  .card { padding:16px; }
+
+  /* Buttons compact */
+  .btn { padding:8px 14px; font-size:12px; }
+
+  /* Bottom nav appears */
+  .bottom-nav { display:flex; }
+
+  /* Notification repositioned */
+  .notif { bottom:calc(var(--bottom-nav-h) + 12px); right:12px; left:12px; max-width:none; }
+
+  /* Member card */
+  .member-card::before { font-size:48px; }
+
+  /* Modal full-width sheet from bottom */
+  .modal-overlay { align-items:flex-end; padding:0; }
+  .modal { border-radius:16px 16px 0 0; max-height:85vh; width:100%; }
+
+  /* Schedule inner label text smaller */
+  .sched-event { font-size:10px; padding:3px 5px; }
+  .sched-header, .sched-time { padding:8px 6px; font-size:10px; }
+
+  /* Tables */
+  .card[style*="padding:0"] { padding:0 !important; }
+}
+
+/* Small mobile: ≤ 400px */
+@media (max-width:400px) {
+  .stat-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .stat-value { font-size:26px; }
+  .page-title { font-size:20px; }
+  .content { padding:12px 10px; }
+  .role-card { padding:20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LANDING ══════════════ -->
+<div id="landing">
+  <div class="landing-logo">FITCORE</div>
+  <div class="landing-tagline">Gym Management System — Select Your Role</div>
+  <div class="role-grid">
+    <div class="role-card" style="--accent-c:#e8ff47" onclick="login('admin')">
+      <div class="role-icon">🛡️</div>
+      <div class="role-title">Admin</div>
+      <div class="role-desc">Full system access · Analytics · Member management · Revenue reports</div>
+    </div>
+    <div class="role-card" style="--accent-c:#47c8ff" onclick="login('trainer')">
+      <div class="role-icon">💪</div>
+      <div class="role-title">Trainer</div>
+      <div class="role-desc">Manage classes · Set schedules · Track member progress</div>
+    </div>
+    <div class="role-card" style="--accent-c:#ff6b35" onclick="login('member')">
+      <div class="role-icon">🏃</div>
+      <div class="role-title">Member</div>
+      <div class="role-desc">Book classes · View schedule · Submit feedback & complaints</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span>⚡ FITCORE</span>
+      <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
+    </div>
+    <div id="roleBadge" class="sidebar-role-badge"></div>
+    <div id="navItems" class="nav-section" style="overflow-y:auto;flex:1"></div>
+    <div class="sidebar-footer" onclick="logout()">
+      <div class="avatar" id="avatarLetter">A</div>
+      <div class="user-info">
+        <div class="name" id="sidebarName">Admin User</div>
+        <div class="role" id="sidebarRole">Administrator</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+    <div class="content" id="contentArea"></div>
+  </div>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav-inner" id="bottomNavInner"></div>
+  </nav>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-title" id="modalTitle">Modal</div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const CLASSES = ['Cardio','Strength','Yoga','Zumba','Crossfit'];
+const TRAINERS = [
+  { id:'T1', name:'Arun Mehta',    specialty:'Cardio & HIIT',   rating:4.8, sessions:142 },
+  { id:'T2', name:'Priya Sharma',  specialty:'Yoga & Flexibility', rating:4.9, sessions:98 },
+  { id:'T3', name:'Rahul Verma',   specialty:'Strength & Power', rating:4.7, sessions:167 },
+  { id:'T4', name:'Sneha Patel',   specialty:'Zumba & Dance',   rating:4.6, sessions:85 },
+  { id:'T5', name:'Vikram Singh',  specialty:'Crossfit & Endurance', rating:4.8, sessions:120 },
+];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const TIMES = ['06:00','07:00','08:00','09:00','10:00','11:00','16:00','17:00','18:00','19:00','20:00'];
+
+// Trainer schedule: { trainerId, class, day, time, slots, booked }
+let SCHEDULE = [
+  { id:'s1', trainerId:'T1', class:'Cardio',   day:0, time:'06:00', slots:20, booked:14 },
+  { id:'s2', trainerId:'T1', class:'Cardio',   day:2, time:'07:00', slots:20, booked:18 },
+  { id:'s3', trainerId:'T2', class:'Yoga',     day:1, time:'08:00', slots:15, booked:10 },
+  { id:'s4', trainerId:'T2', class:'Yoga',     day:3, time:'09:00', slots:15, booked:15 },
+  { id:'s5', trainerId:'T3', class:'Strength', day:0, time:'09:00', slots:12, booked:12 },
+  { id:'s6', trainerId:'T3', class:'Strength', day:4, time:'18:00', slots:12, booked:7  },
+  { id:'s7', trainerId:'T4', class:'Zumba',    day:2, time:'17:00', slots:25, booked:20 },
+  { id:'s8', trainerId:'T4', class:'Zumba',    day:5, time:'10:00', slots:25, booked:22 },
+  { id:'s9', trainerId:'T5', class:'Crossfit', day:1, time:'06:00', slots:10, booked:9  },
+  { id:'s10',trainerId:'T5', class:'Crossfit', day:4, time:'07:00', slots:10, booked:10 },
+  { id:'s11',trainerId:'T1', class:'Cardio',   day:5, time:'08:00', slots:20, booked:6  },
+  { id:'s12',trainerId:'T2', class:'Yoga',     day:6, time:'10:00', slots:15, booked:5  },
+];
+
+let COMPLAINTS = [
+  { id:1, memberId:'M101', memberName:'Kiara Reddy', text:'Locker room needs cleaning', status:'Pending', ts:'2026-03-10 09:12' },
+  { id:2, memberId:'M203', memberName:'Arjun Patel', text:'AC not working in Yoga hall', status:'Resolved', ts:'2026-03-08 14:30' },
+];
+let FEEDBACK = [
+  { id:1, memberId:'M101', memberName:'Kiara Reddy', text:'Loved the Zumba session!', rating:5, ts:'2026-03-15 10:00' },
+  { id:2, memberId:'M203', memberName:'Arjun Patel', text:'Trainer was very helpful', rating:4, ts:'2026-03-14 17:22' },
+];
+let BOOKINGS = [
+  { schedId:'s1', memberId:'M101', memberName:'Kiara Reddy', status:'Confirmed' },
+  { schedId:'s3', memberId:'M101', memberName:'Kiara Reddy', status:'Confirmed' },
+];
+let MEMBERS = [
+  { id:'M101', name:'Kiara Reddy',  email:'kiara@email.com', phone:'9870001234', plan:'Premium', joined:'2025-08-01', lastVisit:'2026-03-20' },
+  { id:'M203', name:'Arjun Patel',  email:'arjun@email.com', phone:'9870005678', plan:'Basic',   joined:'2025-10-15', lastVisit:'2026-02-10' },
+  { id:'M304', name:'Meera Nair',   email:'meera@email.com', phone:'9870009012', plan:'Premium', joined:'2025-07-20', lastVisit:'2026-03-21' },
+  { id:'M405', name:'Dev Khanna',   email:'dev@email.com',   phone:'9870003456', plan:'Basic',   joined:'2026-01-05', lastVisit:'2026-01-28' },
+  { id:'M506', name:'Riya Gupta',   email:'riya@email.com',  phone:'9870007890', plan:'Annual',  joined:'2025-06-01', lastVisit:'2026-03-18' },
+];
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+let currentRole = null;
+let currentUser = { name:'Kiara Reddy', id:'M101' };
+
+const NAV_CONFIG = {
+  admin: [
+    { icon:'📊', label:'Dashboard',       page:'dashboard' },
+    { icon:'👥', label:'Members',         page:'members' },
+    { icon:'💬', label:'Complaints',      page:'complaints' },
+    { icon:'⭐', label:'Feedback',        page:'feedback' },
+    { icon:'📅', label:'Schedule',        page:'schedule' },
+    { icon:'💪', label:'Trainers',        page:'trainers' },
+    { icon:'📈', label:'Revenue',         page:'revenue' },
+    { icon:'📋', label:'Reports',         page:'reports' },
+  ],
+  trainer: [
+    { icon:'📅', label:'My Schedule',     page:'trainerSchedule' },
+    { icon:'👥', label:'My Members',      page:'trainerMembers' },
+    { icon:'📊', label:'Class Analytics', page:'classAnalytics' },
+    { icon:'⭐', label:'Feedback',        page:'feedback' },
+  ],
+  member: [
+    { icon:'🏠', label:'My Dashboard',    page:'memberDash' },
+    { icon:'📅', label:'Book a Class',    page:'bookClass' },
+    { icon:'🎟️', label:'My Bookings',    page:'myBookings' },
+    { icon:'📈', label:'My Progress',     page:'myProgress' },
+    { icon:'💬', label:'Complaints',      page:'memberComplaints' },
+    { icon:'⭐', label:'Feedback',        page:'memberFeedback' },
+  ]
+};
+
+const ROLE_STYLES = {
+  admin:   { bg:'#e8ff4722', color:'var(--accent)',  label:'Administrator' },
+  trainer: { bg:'#47c8ff22', color:'var(--accent3)', label:'Trainer' },
+  member:  { bg:'#ff6b3522', color:'var(--accent2)', label:'Member' },
+};
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function login(role) {
+  currentRole = role;
+  if (role==='trainer') currentUser = { name:'Arun Mehta', id:'T1' };
+  else if (role==='member') currentUser = { name:'Kiara Reddy', id:'M101' };
+  else currentUser = { name:'Admin User', id:'ADMIN' };
+
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  const rs = ROLE_STYLES[role];
+  const badge = document.getElementById('roleBadge');
+  badge.style.background = rs.bg;
+  badge.style.color = rs.color;
+  badge.textContent = rs.label;
+
+  document.getElementById('avatarLetter').textContent = currentUser.name[0];
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent = rs.label;
+
+  // Build nav
+  const nav = NAV_CONFIG[role];
+  const navEl = document.getElementById('navItems');
+  navEl.innerHTML = nav.map((n,i) => `
+    <div class="nav-item${i===0?' active':''}" onclick="navigate('${n.page}',this)" data-page="${n.page}">
+      <span class="nav-icon">${n.icon}</span> ${n.label}
+    </div>
+  `).join('');
+
+  navigate(nav[0].page, navEl.querySelector('.nav-item'));
+
+  // Build bottom nav (mobile)
+  const bni = document.getElementById('bottomNavInner');
+  bni.innerHTML = nav.slice(0,6).map((n,i)=>`
+    <div class="bottom-nav-item${i===0?' active':''}" onclick="navigate('${n.page}',document.querySelector('[data-page=${n.page}]'))" data-bn-page="${n.page}">
+      <span class="bottom-nav-icon">${n.icon}</span>
+      <span>${n.label.split(' ')[0]}</span>
+    </div>
+  `).join('');
+}
+
+function logout() {
+  currentRole = null;
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function navigate(page, el) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  // sync bottom nav
+  document.querySelectorAll('.bottom-nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.bnPage===page);
+  });
+  const navItem = NAV_CONFIG[currentRole]?.find(n=>n.page===page);
+  document.getElementById('pageTitle').textContent = navItem?.label || page;
+  // close sidebar on mobile after navigation
+  closeSidebar();
+  renderPage(page);
+}
+
+// ═══════════════════════════════════════════
+// PAGE RENDERER
+// ═══════════════════════════════════════════
+function renderPage(page) {
+  const ca = document.getElementById('contentArea');
+  const ta = document.getElementById('topbarActions');
+  ta.innerHTML = '';
+
+  switch(page) {
+    case 'dashboard':     ca.innerHTML = renderAdminDashboard(); break;
+    case 'members':       ca.innerHTML = renderMembers(); break;
+    case 'complaints':    ca.innerHTML = renderComplaints(true); break;
+    case 'feedback':      ca.innerHTML = renderFeedback(true); break;
+    case 'schedule':      ca.innerHTML = renderScheduleAdmin(); break;
+    case 'trainers':      ca.innerHTML = renderTrainers(); break;
+    case 'revenue':       ca.innerHTML = renderRevenue(); break;
+    case 'reports':       ca.innerHTML = renderReports(); break;
+    case 'trainerSchedule': ca.innerHTML = renderTrainerSchedule(); break;
+    case 'trainerMembers':  ca.innerHTML = renderTrainerMembers(); break;
+    case 'classAnalytics':  ca.innerHTML = renderClassAnalytics(); break;
+    case 'memberDash':    ca.innerHTML = renderMemberDash(); break;
+    case 'bookClass':     ca.innerHTML = renderBookClass(); break;
+    case 'myBookings':    ca.innerHTML = renderMyBookings(); break;
+    case 'myProgress':    ca.innerHTML = renderMyProgress(); break;
+    case 'memberComplaints': ca.innerHTML = renderMemberComplaints(); break;
+    case 'memberFeedback':   ca.innerHTML = renderMemberFeedback(); break;
+    default: ca.innerHTML = `<div class="card"><p>Page not found</p></div>`;
+  }
+  // Animate bars after render
+  setTimeout(()=>{
+    document.querySelectorAll('[data-width]').forEach(el=>{
+      el.style.width = el.dataset.width+'%';
+    });
+  },50);
+}
+
+// ═══════════════════════════════════════════
+// ─── ADMIN PAGES ───
+// ═══════════════════════════════════════════
+function renderAdminDashboard() {
+  const totalRevenue = 128450;
+  const activeMembers = 287;
+  const sessionsToday = 8;
+  const avgRating = 4.75;
+  return `
+  <div class="stat-grid">
+    <div class="stat-card" style="--c:var(--accent)">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-value">₹1.28L</div>
+      <div class="stat-sub">↑ 12% from last month</div>
+    </div>
+    <div class="stat-card" style="--c:var(--accent3)">
+      <div class="stat-label">Active Members</div>
+      <div class="stat-value">287</div>
+      <div class="stat-sub">↑ 23 new this month</div>
+    </div>
+    <div class="stat-card" style="--c:var(--success)">
+      <div class="stat-label">Sessions Today</div>
+      <div class="stat-value">8</div>
+      <div class="stat-sub">120 slots filled</div>
+    </div>
+    <div class="stat-card" style="--c:var(--accent2)">
+      <div class="stat-label">Avg Rating</div>
+      <div class="stat-value">4.75</div>
+      <div class="stat-sub">Based on 48 reviews</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-title">📊 Class Popularity</div>
+      ${CLASSES.map((c,i)=>{
+        const pcts=[70,55,88,65,45];
+        const cols=['var(--accent3)','var(--accent2)','var(--accent)','var(--success)','var(--danger)'];
+        return `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span>${c}</span><span style="color:var(--muted)">${pcts[i]}%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="background:${cols[i]};width:0" data-width="${pcts[i]}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 Top Trainers</div>
+      ${TRAINERS.slice(0,4).map(t=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div class="avatar" style="font-family:'DM Sans';font-size:14px;flex-shrink:0">${t.name.split(' ').map(w=>w[0]).join('')}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">${t.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${t.specialty}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="badge badge-accent">⭐ ${t.rating}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">${t.sessions} sessions</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Recent Complaints</div>
+    <table>
+      <tr><th>Member</th><th>Complaint</th><th>Status</th><th>Date</th><th>Action</th></tr>
+      ${COMPLAINTS.map(c=>`
+        <tr>
+          <td><strong>${c.memberName}</strong></td>
+          <td>${c.text}</td>
+          <td><span class="badge ${c.status==='Resolved'?'badge-success':'badge-warning'}">${c.status}</span></td>
+          <td style="color:var(--muted)">${c.ts}</td>
+          <td>${c.status!=='Resolved'?`<button class="btn btn-sm btn-outline-accent" onclick="resolveComplaint(${c.id})">Resolve</button>`:''}</td>
+        </tr>
+      `).join('')}
+    </table>
+  </div>`;
+}
+
+function renderMembers() {
+  return `
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <input class="input" placeholder="🔍 Search members..." style="flex:1;min-width:180px;max-width:300px" oninput="filterMembers(this.value)">
+    <button class="btn btn-primary" onclick="showAddMember()">+ Add Member</button>
+    <button class="btn btn-ghost">📥 Export</button>
+  </div>
+  <div class="card table-wrap" style="padding:0">
+    <table id="membersTable">
+      <tr><th>ID</th><th>Name</th><th>Email</th><th>Plan</th><th>Joined</th><th>Last Visit</th><th>Status</th><th>Actions</th></tr>
+      ${MEMBERS.map(m=>{
+        const last = new Date(m.lastVisit);
+        const diff = Math.floor((new Date()-last)/(1000*86400));
+        const status = diff>30 ? 'Inactive' : 'Active';
+        return `
+        <tr>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${m.id}</td>
+          <td><strong>${m.name}</strong></td>
+          <td style="color:var(--muted)">${m.email}</td>
+          <td><span class="badge ${m.plan==='Premium'?'badge-accent':m.plan==='Annual'?'badge-success':'badge-info'}">${m.plan}</span></td>
+          <td style="color:var(--muted)">${m.joined}</td>
+          <td style="color:var(--muted)">${m.lastVisit}</td>
+          <td><span class="badge ${status==='Active'?'badge-success':'badge-danger'}">${status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-ghost" onclick="viewMember('${m.id}')">View</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </table>
+  </div>`;
+}
+
+function renderScheduleAdmin() {
+  let gridCells = '';
+  // Header row
+  gridCells += `<div class="sched-header">Time</div>`;
+  DAYS.forEach(d => { gridCells += `<div class="sched-header">${d}</div>`; });
+  // Time rows
+  TIMES.forEach(t => {
+    gridCells += `<div class="sched-time">${t}</div>`;
+    DAYS.forEach((d,di) => {
+      const ev = SCHEDULE.find(s=>s.time===t && s.day===di);
+      const trainer = ev ? TRAINERS.find(tr=>tr.id===ev.trainerId) : null;
+      const cls = ev ? ev.class.toLowerCase() : '';
+      gridCells += `<div class="sched-cell">
+        ${ev ? `<div class="sched-event ev-${cls==='crossfit'?'cross':cls}" onclick="viewSession('${ev.id}')">
+          <div>${ev.class}</div>
+          <div style="font-size:10px;opacity:.7;font-weight:400">${trainer?.name.split(' ')[0]} · ${ev.booked}/${ev.slots}</div>
+        </div>` : ''}
+      </div>`;
+    });
+  });
+  return `
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${CLASSES.map(c=>`<span class="chip active">${c}</span>`).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-left:auto" onclick="showAddSession()">+ Add Session</button>
+  </div>
+  <div class="schedule-wrap"><div class="schedule-grid">${gridCells}</div></div>
+  <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap">
+    <div style="font-size:12px;color:var(--muted)">
+      ${CLASSES.map((c,i)=>{
+        const col=['var(--accent3)','var(--accent)','var(--accent2)','var(--success)','var(--danger)'];
+        return `<span style="margin-right:12px"><span style="color:${col[i]}">●</span> ${c}</span>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderTrainers() {
+  return `
+  <div class="grid-3">
+    ${TRAINERS.map(t=>`
+      <div class="card" style="position:relative">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          <div class="avatar" style="width:52px;height:52px;font-size:20px;flex-shrink:0">${t.name.split(' ').map(w=>w[0]).join('')}</div>
+          <div>
+            <div style="font-size:16px;font-weight:600">${t.name}</div>
+            <div style="font-size:12px;color:var(--muted)">${t.specialty}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:16px">
+          <div class="stat-card" style="flex:1;padding:12px;--c:var(--accent)">
+            <div class="stat-label" style="font-size:10px">Rating</div>
+            <div class="stat-value" style="font-size:28px">⭐ ${t.rating}</div>
+          </div>
+          <div class="stat-card" style="flex:1;padding:12px;--c:var(--accent3)">
+            <div class="stat-label" style="font-size:10px">Sessions</div>
+            <div class="stat-value" style="font-size:28px">${t.sessions}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          ${SCHEDULE.filter(s=>s.trainerId===t.id).map(s=>`
+            <span class="badge badge-info" style="margin-right:4px;margin-bottom:4px">${DAYS[s.day]} ${s.time}</span>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-ghost" onclick="viewTrainerSchedule('${t.id}')">📅 Schedule</button>
+          <button class="btn btn-sm btn-outline-accent" onclick="notify('Message sent to ${t.name}','success')">✉️ Message</button>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function renderComplaints(admin=false) {
+  return `
+  <div class="card table-wrap" style="padding:0">
+    <table>
+      <tr><th>Member</th><th>Complaint</th><th>Status</th><th>Date</th>${admin?'<th>Action</th>':''}</tr>
+      ${COMPLAINTS.map(c=>`
+        <tr>
+          <td><strong>${c.memberName}</strong><br><span style="font-size:11px;color:var(--muted)">${c.memberId}</span></td>
+          <td>${c.text}</td>
+          <td><span class="badge ${c.status==='Resolved'?'badge-success':'badge-warning'}">${c.status}</span></td>
+          <td style="color:var(--muted)">${c.ts}</td>
+          ${admin?`<td>${c.status!=='Resolved'?`<button class="btn btn-sm btn-outline-accent" onclick="resolveComplaint(${c.id})">✅ Resolve</button>`:''}</td>`:''}
+        </tr>
+      `).join('')}
+    </table>
+  </div>`;
+}
+
+function renderFeedback(admin=false) {
+  const avg = (FEEDBACK.reduce((a,f)=>a+f.rating,0)/FEEDBACK.length).toFixed(1);
+  return `
+  <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card" style="--c:var(--warning)"><div class="stat-label">Avg Rating</div><div class="stat-value">⭐ ${avg}</div></div>
+    <div class="stat-card" style="--c:var(--accent3)"><div class="stat-label">Total Reviews</div><div class="stat-value">${FEEDBACK.length}</div></div>
+    <div class="stat-card" style="--c:var(--success)"><div class="stat-label">5-Star Reviews</div><div class="stat-value">${FEEDBACK.filter(f=>f.rating===5).length}</div></div>
+  </div>
+  <div class="card" style="padding:0">
+    <table>
+      <tr><th>Member</th><th>Feedback</th><th>Rating</th><th>Date</th></tr>
+      ${FEEDBACK.map(f=>`
+        <tr>
+          <td><strong>${f.memberName}</strong></td>
+          <td>${f.text}</td>
+          <td><span class="stars">${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}</span></td>
+          <td style="color:var(--muted)">${f.ts}</td>
+        </tr>
+      `).join('')}
+    </table>
+  </div>`;
+}
+
+function renderRevenue() {
+  const months = ['Oct','Nov','Dec','Jan','Feb','Mar'];
+  const rev = [82000,95000,110000,103000,118000,128450];
+  const maxR = Math.max(...rev);
+  return `
+  <div class="stat-grid">
+    <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">This Month</div><div class="stat-value">₹1.28L</div><div class="stat-sub">↑ 8.8% MoM</div></div>
+    <div class="stat-card" style="--c:var(--success)"><div class="stat-label">YTD Revenue</div><div class="stat-value">₹6.36L</div><div class="stat-sub">Target: ₹8L</div></div>
+    <div class="stat-card" style="--c:var(--accent3)"><div class="stat-label">Avg Per Member</div><div class="stat-value">₹447</div><div class="stat-sub">287 active members</div></div>
+    <div class="stat-card" style="--c:var(--accent2)"><div class="stat-label">Outstanding</div><div class="stat-value">₹12K</div><div class="stat-sub">8 pending dues</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📈 Monthly Revenue Trend</div>
+    <div style="display:flex;align-items:flex-end;gap:16px;height:180px;padding-bottom:32px;position:relative">
+      ${rev.map((r,i)=>`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+          <div style="font-size:11px;color:var(--muted)">₹${(r/1000).toFixed(0)}K</div>
+          <div style="width:100%;background:linear-gradient(to top,var(--accent),var(--accent2));border-radius:6px 6px 0 0;opacity:${i===5?1:.7};transition:height .6s ease" 
+               data-h="${Math.round(r/maxR*140)}" id="bar${i}" style2="height:0px"></div>
+          <div style="font-size:11px;color:var(--muted);position:absolute;bottom:0">${months[i]}</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+  // Animated bars via script
+}
+
+function renderReports() {
+  return `
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📋 Available Reports</div>
+      ${[
+        ['Member Attendance Report','Monthly summary of all member attendance','badge-accent'],
+        ['Revenue & Billing Report','Detailed revenue breakdown by class and plan','badge-success'],
+        ['Inactive Members Report','Members with no visit in 30+ days','badge-warning'],
+        ['Trainer Performance Report','Ratings and session counts per trainer','badge-info'],
+        ['Class Utilization Report','Slot fill rates per class type','badge-accent'],
+      ].map(([title,desc,badge])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">${title}</div>
+            <div style="font-size:12px;color:var(--muted)">${desc}</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="notify('Report downloaded!','success')">⬇ Download</button>
+        </div>
+      `).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Quick Stats</div>
+      ${[
+        ['Total Members',MEMBERS.length,'var(--accent)'],
+        ['Active Trainers',TRAINERS.length,'var(--accent3)'],
+        ['Weekly Sessions',SCHEDULE.length,'var(--success)'],
+        ['Open Complaints',COMPLAINTS.filter(c=>c.status==='Pending').length,'var(--warning)'],
+        ['Avg Feedback Rating','4.75 ⭐','var(--accent2)'],
+      ].map(([label,val,col])=>`
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--muted)">${label}</span>
+          <span style="font-weight:700;color:${col}">${val}</span>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// ─── TRAINER PAGES ───
+// ═══════════════════════════════════════════
+function renderTrainerSchedule() {
+  const mySessions = SCHEDULE.filter(s=>s.trainerId===currentUser.id);
+  let gridCells = `<div class="sched-header">Time</div>`;
+  DAYS.forEach(d => { gridCells += `<div class="sched-header">${d}</div>`; });
+  TIMES.forEach(t => {
+    gridCells += `<div class="sched-time">${t}</div>`;
+    DAYS.forEach((d,di) => {
+      const ev = mySessions.find(s=>s.time===t && s.day===di);
+      const cls = ev ? ev.class.toLowerCase() : '';
+      gridCells += `<div class="sched-cell">
+        ${ev ? `<div class="sched-event ev-${cls==='crossfit'?'cross':cls}" onclick="viewSession('${ev.id}')">
+          <div>${ev.class}</div>
+          <div style="font-size:10px;opacity:.7;font-weight:400">${ev.booked}/${ev.slots} booked</div>
+        </div>` : ''}
+      </div>`;
+    });
+  });
+  return `
+  <div class="grid-3" style="margin-bottom:24px">
+    <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">My Sessions/Week</div><div class="stat-value">${mySessions.length}</div></div>
+    <div class="stat-card" style="--c:var(--accent3)"><div class="stat-label">Total Booked</div><div class="stat-value">${mySessions.reduce((a,s)=>a+s.booked,0)}</div></div>
+    <div class="stat-card" style="--c:var(--success)"><div class="stat-label">Available Slots</div><div class="stat-value">${mySessions.reduce((a,s)=>a+(s.slots-s.booked),0)}</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div style="font-size:14px;color:var(--muted)">Showing: <strong style="color:var(--text)">${currentUser.name}</strong>'s schedule</div>
+    <button class="btn btn-primary" onclick="showAddSession()">+ Add Session</button>
+  </div>
+  <div class="schedule-wrap"><div class="schedule-grid">${gridCells}</div></div>`;
+}
+
+function renderTrainerMembers() {
+  const myClasses = SCHEDULE.filter(s=>s.trainerId===currentUser.id).map(s=>s.id);
+  const myBookings = BOOKINGS.filter(b=>myClasses.includes(b.schedId));
+  const uniqueMembers = [...new Map(myBookings.map(b=>[b.memberId,b])).values()];
+  return `
+  <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">My Students</div><div class="stat-value">${uniqueMembers.length}</div></div>
+    <div class="stat-card" style="--c:var(--accent3)"><div class="stat-label">Active Bookings</div><div class="stat-value">${myBookings.length}</div></div>
+    <div class="stat-card" style="--c:var(--success)"><div class="stat-label">Attendance Rate</div><div class="stat-value">87%</div></div>
+  </div>
+  <div class="card" style="padding:0">
+    <table>
+      <tr><th>Member</th><th>Class</th><th>Status</th><th>Actions</th></tr>
+      ${myBookings.map(b=>{
+        const sched = SCHEDULE.find(s=>s.id===b.schedId);
+        return `
+        <tr>
+          <td><strong>${b.memberName}</strong></td>
+          <td><span class="badge badge-info">${sched?.class||'—'} · ${DAYS[sched?.day||0]} ${sched?.time}</span></td>
+          <td><span class="badge badge-success">${b.status}</span></td>
+          <td><button class="btn btn-sm btn-ghost" onclick="notify('Progress report for ${b.memberName} opened','success')">📊 Progress</button></td>
+        </tr>`;
+      }).join('')}
+    </table>
+  </div>`;
+}
+
+function renderClassAnalytics() {
+  const mySessions = SCHEDULE.filter(s=>s.trainerId===currentUser.id);
+  return `
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-title">📊 Session Utilization</div>
+    ${mySessions.map(s=>{
+      const pct = Math.round(s.booked/s.slots*100);
+      return `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span><strong>${s.class}</strong> · ${DAYS[s.day]} ${s.time}</span>
+          <span style="color:var(--muted)">${s.booked}/${s.slots} · <strong style="color:${pct>80?'var(--success)':pct>50?'var(--warning)':'var(--danger)'}">${pct}%</strong></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" data-width="${pct}" style="width:0;background:${pct>80?'var(--success)':pct>50?'var(--warning)':'var(--danger)'}"></div></div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">⭐ My Ratings</div>
+      ${[5,4,3].map(r=>{
+        const cnt = r===5?1:r===4?1:0;
+        return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <span class="stars" style="font-size:14px">${'★'.repeat(r)}</span>
+          <div class="progress-bar" style="flex:1"><div class="progress-fill" data-width="${cnt/2*100}" style="width:0;background:var(--warning)"></div></div>
+          <span style="font-size:12px;color:var(--muted)">${cnt}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Upcoming Sessions</div>
+      ${mySessions.slice(0,3).map(s=>`
+        <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+          <div><strong>${s.class}</strong><br><span style="font-size:12px;color:var(--muted)">${DAYS[s.day]} · ${s.time}</span></div>
+          <span class="badge ${s.booked>=s.slots?'badge-danger':'badge-success'}">${s.booked>=s.slots?'Full':'Open'}</span>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// ─── MEMBER PAGES ───
+// ═══════════════════════════════════════════
+function renderMemberDash() {
+  const myB = BOOKINGS.filter(b=>b.memberId===currentUser.id);
+  return `
+  <div class="grid-3" style="margin-bottom:24px">
+    <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">My Bookings</div><div class="stat-value">${myB.length}</div></div>
+    <div class="stat-card" style="--c:var(--accent3)"><div class="stat-label">Classes Attended</div><div class="stat-value">24</div></div>
+    <div class="stat-card" style="--c:var(--success)"><div class="stat-label">Streak</div><div class="stat-value">7🔥</div><div class="stat-sub">days in a row</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="member-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Member Card</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px">${currentUser.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">ID: ${currentUser.id} · Premium Plan</div>
+        </div>
+        <div class="badge badge-success" style="font-size:13px;padding:6px 14px">Active</div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:20px">
+        <div><div style="font-size:11px;color:var(--muted)">Valid Until</div><div style="font-size:14px;font-weight:600">Dec 2026</div></div>
+        <div><div style="font-size:11px;color:var(--muted)">Plan</div><div style="font-size:14px;font-weight:600">Premium</div></div>
+        <div><div style="font-size:11px;color:var(--muted)">Since</div><div style="font-size:14px;font-weight:600">Aug 2025</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Upcoming Classes</div>
+      ${myB.map(b=>{
+        const s = SCHEDULE.find(sc=>sc.id===b.schedId);
+        const t = s ? TRAINERS.find(tr=>tr.id===s.trainerId) : null;
+        return s ? `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between">
+            <strong>${s.class}</strong>
+            <span class="badge badge-success">${b.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${DAYS[s.day]} · ${s.time} · ${t?.name}</div>
+        </div>` : '';
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderBookClass() {
+  return `
+  <div style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap">
+    <select class="input" style="max-width:160px" id="filterClass" onchange="filterBookClasses()">
+      <option value="">All Classes</option>
+      ${CLASSES.map(c=>`<option>${c}</option>`).join('')}
+    </select>
+    <select class="input" style="max-width:160px" id="filterTrainer" onchange="filterBookClasses()">
+      <option value="">All Trainers</option>
+      ${TRAINERS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+    </select>
+  </div>
+  <div class="grid-3" id="classCards">
+    ${SCHEDULE.map(s=>{
+      const trainer = TRAINERS.find(t=>t.id===s.trainerId);
+      const isFull = s.booked >= s.slots;
+      const isBooked = BOOKINGS.some(b=>b.schedId===s.id && b.memberId===currentUser.id);
+      const cls = s.class.toLowerCase();
+      const colMap = {cardio:'var(--accent3)',yoga:'var(--accent2)',strength:'var(--accent)',zumba:'var(--success)',crossfit:'var(--danger)'};
+      const col = colMap[cls] || 'var(--accent)';
+      return `
+      <div class="card" style="border-color:${isBooked?col:''}" data-class="${s.class}" data-trainer="${s.trainerId}">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+          <span class="badge" style="background:${col}20;color:${col}">${s.class}</span>
+          <span class="badge ${isFull?'badge-danger':isBooked?'badge-success':'badge-info'}">${isFull?'Full':isBooked?'Booked':`${s.slots-s.booked} left`}</span>
+        </div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${DAYS[s.day]} · ${s.time}</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
+          <strong style="color:var(--text)">${trainer?.name}</strong> · ⭐ ${trainer?.rating}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <div class="progress-bar"><div class="progress-fill" data-width="${Math.round(s.booked/s.slots*100)}" style="width:0;background:${col}"></div></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">${s.booked}/${s.slots} booked</div>
+          </div>
+        </div>
+        ${!isFull && !isBooked ? `<button class="btn btn-primary" style="width:100%" onclick="bookSession('${s.id}')">Book Now</button>` :
+          isBooked ? `<button class="btn btn-ghost" style="width:100%" onclick="cancelBooking('${s.id}')">Cancel Booking</button>` :
+          `<button class="btn btn-ghost" style="width:100%" disabled>Class Full</button>`}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderMyBookings() {
+  const myB = BOOKINGS.filter(b=>b.memberId===currentUser.id);
+  return `
+  <div class="card" style="padding:0">
+    ${myB.length===0 ? '<div style="padding:40px;text-align:center;color:var(--muted)">No bookings yet. <a href="#" onclick="navigate(\'bookClass\',document.querySelector(\'[data-page=bookClass]\'))">Book a class!</a></div>' : `
+    <table>
+      <tr><th>Class</th><th>Day & Time</th><th>Trainer</th><th>Status</th><th>Action</th></tr>
+      ${myB.map(b=>{
+        const s = SCHEDULE.find(sc=>sc.id===b.schedId);
+        const t = s ? TRAINERS.find(tr=>tr.id===s.trainerId) : null;
+        return s ? `
+        <tr>
+          <td><strong>${s.class}</strong></td>
+          <td>${DAYS[s.day]} · ${s.time}</td>
+          <td>${t?.name || '—'}</td>
+          <td><span class="badge badge-success">${b.status}</span></td>
+          <td><button class="btn btn-sm btn-danger" onclick="cancelBooking('${b.schedId}')">Cancel</button></td>
+        </tr>` : '';
+      }).join('')}
+    </table>`}
+  </div>`;
+}
+
+function renderMyProgress() {
+  const weeks = 12;
+  const cells = Array.from({length:weeks*7},(_,i)=>({
+    week:Math.floor(i/7), day:i%7,
+    active: Math.random()>.45,
+    intensity: Math.floor(Math.random()*3)+1
+  }));
+  return `
+  <div class="grid-3" style="margin-bottom:24px">
+    <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">Total Visits</div><div class="stat-value">24</div><div class="stat-sub">This month</div></div>
+    <div class="stat-card" style="--c:var(--success)"><div class="stat-label">Best Streak</div><div class="stat-value">12</div><div class="stat-sub">days consecutive</div></div>
+    <div class="stat-card" style="--c:var(--accent3)"><div class="stat-label">Favourite Class</div><div class="stat-value" style="font-size:20px">Cardio</div></div>
+  </div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-title">📅 Attendance Heatmap (Last 12 Weeks)</div>
+    <div style="display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px">
+      ${Array.from({length:weeks},(_,w)=>`
+        <div style="display:flex;flex-direction:column;gap:3px">
+          ${Array.from({length:7},(_,d)=>{
+            const c = cells[w*7+d];
+            return `<div class="hm-cell${c.active?' hm-'+c.intensity:''}" title="${DAYS[d]} W${w+1}"></div>`;
+          }).join('')}
+        </div>
+      `).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;font-size:12px;color:var(--muted)">
+      Less <div class="hm-cell"></div><div class="hm-cell hm-1"></div><div class="hm-cell hm-2"></div><div class="hm-cell hm-3"></div> More
+    </div>
+  </div>
+  <div class="grid-2">
+    ${CLASSES.map((c,i)=>{
+      const cnt = [6,8,4,3,3][i];
+      const pct = cnt/8*100;
+      return `
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">${c}</div>
+        <div style="font-size:32px;font-family:'Bebas Neue';color:var(--accent);margin-bottom:8px">${cnt} sessions</div>
+        <div class="progress-bar"><div class="progress-fill" data-width="${pct}" style="width:0"></div></div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderMemberComplaints() {
+  const mine = COMPLAINTS.filter(c=>c.memberId===currentUser.id);
+  return `
+  <div class="grid-2">
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">📝 Submit a Complaint</div>
+        <div class="input-group"><label class="input-label">Complaint</label>
+          <textarea class="input" id="complaintText" rows="4" placeholder="Describe your complaint..."></textarea></div>
+        <button class="btn btn-primary" onclick="submitComplaint()">Submit Complaint</button>
+      </div>
+    </div>
+    <div class="card" style="padding:0">
+      <div style="padding:20px 24px 12px"><strong>My Complaints (${mine.length})</strong></div>
+      <table>
+        <tr><th>Complaint</th><th>Status</th><th>Date</th></tr>
+        ${mine.length===0 ? '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">No complaints submitted</td></tr>' :
+          mine.map(c=>`
+          <tr>
+            <td>${c.text}</td>
+            <td><span class="badge ${c.status==='Resolved'?'badge-success':'badge-warning'}">${c.status}</span></td>
+            <td style="color:var(--muted)">${c.ts}</td>
+          </tr>`).join('')}
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderMemberFeedback() {
+  return `
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">⭐ Submit Feedback</div>
+      <div class="input-group"><label class="input-label">Class / Trainer</label>
+        <select class="input" id="feedClass">
+          ${CLASSES.map(c=>`<option>${c}</option>`).join('')}
+        </select></div>
+      <div class="input-group"><label class="input-label">Rating</label>
+        <div style="display:flex;gap:8px">
+          ${[1,2,3,4,5].map(r=>`<span style="font-size:28px;cursor:pointer;transition:.2s" id="star${r}" onclick="setRating(${r})">☆</span>`).join('')}
+        </div>
+        <input type="hidden" id="ratingVal" value="5">
+      </div>
+      <div class="input-group"><label class="input-label">Comment</label>
+        <textarea class="input" id="feedText" rows="4" placeholder="Tell us about your experience..."></textarea></div>
+      <button class="btn btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+    </div>
+    <div class="card" style="padding:0">
+      <div style="padding:20px 24px 12px"><strong>Recent Feedback</strong></div>
+      <table>
+        <tr><th>Feedback</th><th>Rating</th><th>Date</th></tr>
+        ${FEEDBACK.map(f=>`
+          <tr>
+            <td>${f.text}</td>
+            <td><span class="stars" style="font-size:13px">${'★'.repeat(f.rating)}</span></td>
+            <td style="color:var(--muted)">${f.ts}</td>
+          </tr>`).join('')}
+      </table>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════
+let selectedRating = 5;
+function setRating(r) {
+  selectedRating = r;
+  document.getElementById('ratingVal').value = r;
+  for(let i=1;i<=5;i++) {
+    const el = document.getElementById('star'+i);
+    if(el) el.textContent = i<=r?'★':'☆';
+  }
+}
+
+function bookSession(id) {
+  const s = SCHEDULE.find(sc=>sc.id===id);
+  if(!s) return;
+  if(BOOKINGS.some(b=>b.schedId===id && b.memberId===currentUser.id)) {
+    notify('Already booked!','error'); return;
+  }
+  s.booked++;
+  BOOKINGS.push({ schedId:id, memberId:currentUser.id, memberName:currentUser.name, status:'Confirmed' });
+  notify(`Booked ${s.class} on ${DAYS[s.day]} at ${s.time}!`, 'success');
+  renderPage('bookClass');
+}
+
+function cancelBooking(id) {
+  const idx = BOOKINGS.findIndex(b=>b.schedId===id && b.memberId===currentUser.id);
+  if(idx===-1) return;
+  const s = SCHEDULE.find(sc=>sc.id===id);
+  if(s) s.booked = Math.max(0, s.booked-1);
+  BOOKINGS.splice(idx,1);
+  notify('Booking cancelled.','success');
+  renderPage(currentRole==='member'?'myBookings':'bookClass');
+}
+
+function resolveComplaint(id) {
+  const c = COMPLAINTS.find(c=>c.id===id);
+  if(c) { c.status='Resolved'; notify('Complaint marked as resolved.','success'); renderPage('complaints'); }
+}
+
+function submitComplaint() {
+  const text = document.getElementById('complaintText')?.value?.trim();
+  if(!text) { notify('Please enter a complaint.','error'); return; }
+  COMPLAINTS.push({ id:Date.now(), memberId:currentUser.id, memberName:currentUser.name, text, status:'Pending', ts:new Date().toISOString().slice(0,19).replace('T',' ') });
+  notify('Complaint submitted!','success');
+  document.getElementById('complaintText').value='';
+  renderPage('memberComplaints');
+}
+
+function submitFeedback() {
+  const text = document.getElementById('feedText')?.value?.trim();
+  if(!text) { notify('Please enter feedback.','error'); return; }
+  FEEDBACK.push({ id:Date.now(), memberId:currentUser.id, memberName:currentUser.name, text, rating:selectedRating, ts:new Date().toISOString().slice(0,19).replace('T',' ') });
+  notify('Feedback submitted! Thank you.','success');
+  document.getElementById('feedText').value='';
+  renderPage('memberFeedback');
+}
+
+function filterMembers(q) {
+  const rows = document.querySelectorAll('#membersTable tr:not(:first-child)');
+  rows.forEach(r=>{ r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'; });
+}
+
+function filterBookClasses() {
+  const cls = document.getElementById('filterClass')?.value;
+  const tr  = document.getElementById('filterTrainer')?.value;
+  document.querySelectorAll('#classCards [data-class]').forEach(el=>{
+    const show = (!cls||el.dataset.class===cls) && (!tr||el.dataset.trainer===tr);
+    el.style.display = show ? '' : 'none';
+  });
+}
+
+// ─── Modals ───
+function showAddSession() {
+  openModal('Add New Session', `
+    <div class="input-group"><label class="input-label">Class Type</label>
+      <select class="input" id="ns_class">${CLASSES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="input-group"><label class="input-label">Trainer</label>
+      <select class="input" id="ns_trainer">${TRAINERS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div>
+    <div class="grid-2" style="gap:12px">
+      <div class="input-group"><label class="input-label">Day</label>
+        <select class="input" id="ns_day">${DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">Time</label>
+        <select class="input" id="ns_time">${TIMES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="input-group"><label class="input-label">Max Slots</label>
+      <input class="input" id="ns_slots" type="number" value="15" min="5" max="50"></div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button class="btn btn-primary" onclick="confirmAddSession()">+ Add Session</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+
+function confirmAddSession() {
+  const cls = document.getElementById('ns_class').value;
+  const tid = document.getElementById('ns_trainer').value;
+  const day = parseInt(document.getElementById('ns_day').value);
+  const time = document.getElementById('ns_time').value;
+  const slots = parseInt(document.getElementById('ns_slots').value);
+  if(SCHEDULE.find(s=>s.day===day&&s.time===time&&s.trainerId===tid)) {
+    notify('Trainer already has a session at this time!','error'); return;
+  }
+  SCHEDULE.push({ id:'s'+Date.now(), trainerId:tid, class:cls, day, time, slots, booked:0 });
+  closeModal();
+  notify('Session added successfully!','success');
+  renderPage(currentRole==='trainer'?'trainerSchedule':'schedule');
+}
+
+function viewSession(id) {
+  const s = SCHEDULE.find(sc=>sc.id===id);
+  if(!s) return;
+  const t = TRAINERS.find(tr=>tr.id===s.trainerId);
+  const pct = Math.round(s.booked/s.slots*100);
+  openModal(`${s.class} Session`, `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+      <div class="stat-card" style="flex:1;--c:var(--accent)"><div class="stat-label">Booked</div><div class="stat-value">${s.booked}</div></div>
+      <div class="stat-card" style="flex:1;--c:var(--accent3)"><div class="stat-label">Total Slots</div><div class="stat-value">${s.slots}</div></div>
+      <div class="stat-card" style="flex:1;--c:var(--success)"><div class="stat-label">Fill Rate</div><div class="stat-value">${pct}%</div></div>
+    </div>
+    <div style="padding:16px;background:var(--surface);border-radius:10px;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span>Trainer</span><strong>${t?.name}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span>Day & Time</span><strong>${DAYS[s.day]} at ${s.time}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span>Class</span><strong>${s.class}</strong>
+      </div>
+    </div>
+    <div class="progress-bar" style="height:10px;margin-bottom:20px">
+      <div class="progress-fill" style="width:${pct}%;background:${pct>80?'var(--danger)':'var(--success)'}"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+  `);
+}
+
+function viewMember(id) {
+  const m = MEMBERS.find(mem=>mem.id===id);
+  if(!m) return;
+  openModal(`Member: ${m.name}`, `
+    <div style="padding:16px;background:var(--surface);border-radius:10px;margin-bottom:20px">
+      ${[['ID',m.id],['Email',m.email],['Phone',m.phone],['Plan',m.plan],['Joined',m.joined],['Last Visit',m.lastVisit]].map(([k,v])=>`
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--muted)">${k}</span><strong>${v}</strong>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="notify('Reminder sent to ${m.name}','success');closeModal()">Send Reminder</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+    </div>`);
+}
+
+function viewTrainerSchedule(tid) {
+  const t = TRAINERS.find(tr=>tr.id===tid);
+  const sessions = SCHEDULE.filter(s=>s.trainerId===tid);
+  openModal(`${t.name}'s Schedule`, `
+    <div style="margin-bottom:16px">
+      <span class="badge badge-info" style="margin-right:8px">⭐ ${t.rating}</span>
+      <span class="badge badge-accent">${t.specialty}</span>
+    </div>
+    ${sessions.map(s=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div><strong>${s.class}</strong> · ${DAYS[s.day]} at ${s.time}</div>
+        <span class="badge ${s.booked>=s.slots?'badge-danger':'badge-success'}">${s.booked}/${s.slots}</span>
+      </div>`).join('')}
+    <button class="btn btn-ghost" style="margin-top:16px" onclick="closeModal()">Close</button>`);
+}
+
+function showAddMember() {
+  openModal('Add New Member', `
+    <div class="grid-2" style="gap:12px">
+      <div class="input-group"><label class="input-label">Name</label><input class="input" id="nm_name" placeholder="Full name"></div>
+      <div class="input-group"><label class="input-label">Email</label><input class="input" id="nm_email" type="email" placeholder="email@example.com"></div>
+      <div class="input-group"><label class="input-label">Phone</label><input class="input" id="nm_phone" placeholder="Phone number"></div>
+      <div class="input-group"><label class="input-label">Plan</label>
+        <select class="input" id="nm_plan"><option>Basic</option><option>Premium</option><option>Annual</option></select></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button class="btn btn-primary" onclick="confirmAddMember()">+ Add Member</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+
+function confirmAddMember() {
+  const name = document.getElementById('nm_name').value.trim();
+  if(!name) { notify('Name is required.','error'); return; }
+  const id = 'M'+Math.floor(Math.random()*900+100);
+  MEMBERS.push({ id, name, email:document.getElementById('nm_email').value, phone:document.getElementById('nm_phone').value, plan:document.getElementById('nm_plan').value, joined:new Date().toISOString().slice(0,10), lastVisit:new Date().toISOString().slice(0,10) });
+  closeModal();
+  notify(`Member ${name} added!`,'success');
+  renderPage('members');
+}
+
+function openModal(title, body) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(e) {
+  if(!e || e.target===document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// ─── Notifications ───
+function notify(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `notif ${type}`;
+  el.innerHTML = `<span>${type==='success'?'✅':'❌'}</span> ${msg}`;
+  document.body.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(50px)'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 3000);
+}
+
+// Init star rating on page render for member feedback
+document.addEventListener('click', e=>{
+  if(e.target.id?.startsWith('star')) setRating(parseInt(e.target.id.replace('star','')));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — {{ role_title }} Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+<style>
+.login-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 380px;
+  animation: logoIn .4s ease both;
+}
+.login-role-icon { font-size: 48px; text-align: center; margin-bottom: 8px; }
+.login-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; text-align: center; color: var(--accent-c, var(--accent)); margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: var(--muted); text-align: center; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 28px; }
+.error-msg { background: #ff477020; border: 1px solid var(--danger); color: var(--danger); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div id="landing">
+  <div class="login-box">
+    <div class="login-role-icon">{{ role_icon }}</div>
+    <div class="login-title">{{ role_title }}</div>
+    <div class="login-sub">Sign in to continue</div>
+    {% if error %}
+    <div class="error-msg">❌ {{ error }}</div>
+    {% endif %}
+    <form method="POST">
+      <div class="input-group">
+        <label class="input-label">Username</label>
+        <input class="input" name="username" placeholder="Enter username" autocomplete="username" required>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input class="input" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" type="submit">Login →</button>
+    </form>
+    <div style="text-align:center;margin-top:16px">
+      <a href="/" style="font-size:12px;color:var(--muted);text-decoration:none">← Back to role select</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
