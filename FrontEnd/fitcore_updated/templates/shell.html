@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — {{ role_title }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div id="app" style="display:flex;min-height:100vh">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span>⚡ FITCORE</span>
+      <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
+    </div>
+    <div id="roleBadge" class="sidebar-role-badge"></div>
+    <div id="navItems" class="nav-section" style="overflow-y:auto;flex:1"></div>
+    <div class="sidebar-footer" onclick="location.href='/logout'">
+      <div class="avatar" id="avatarLetter"></div>
+      <div class="user-info">
+        <div class="name" id="sidebarName"></div>
+        <div class="role" id="sidebarRole"></div>
+      </div>
+    </div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+      <div class="page-title" id="pageTitle"></div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+    <div class="content" id="contentArea"></div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav-inner" id="bottomNavInner"></div>
+  </nav>
+</div>
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-title" id="modalTitle">Modal</div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="/static/shared.js"></script>
+<script src="/static/{{ pages_js }}"></script>
+<script>initRole('{{ role }}');</script>
+</body>
+</html>

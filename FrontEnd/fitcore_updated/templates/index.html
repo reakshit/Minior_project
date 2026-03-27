@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — Gym Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div id="landing">
+  <div class="landing-logo">FITCORE</div>
+  <div class="landing-tagline">Gym Management System — Select Your Role</div>
+  <div class="role-grid">
+    <div class="role-card" style="--accent-c:#e8ff47" onclick="location.href='/admin/login'">
+      <div class="role-icon">🛡️</div>
+      <div class="role-title">Admin</div>
+      <div class="role-desc">Full system access · Analytics · Member management · Revenue reports</div>
+    </div>
+    <div class="role-card" style="--accent-c:#47c8ff" onclick="location.href='/trainer/login'">
+      <div class="role-icon">💪</div>
+      <div class="role-title">Trainer</div>
+      <div class="role-desc">Manage classes · Set schedules · Track member progress</div>
+    </div>
+    <div class="role-card" style="--accent-c:#ff6b35" onclick="location.href='/member/login'">
+      <div class="role-icon">🏃</div>
+      <div class="role-title">Member</div>
+      <div class="role-desc">Book classes · View schedule · Submit feedback & complaints</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
