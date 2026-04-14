@@ -125,15 +125,33 @@ def get_stats():
     popularity = {c: round(v['booked'] / v['slots'] * 100) if v['slots'] else 0
                   for c, v in class_stats.items()}
 
-    # Revenue: from revenue collection (monthly records)
-    rev_docs = _strip(list(DB.revenue.find().sort('month', 1)))
-
-    # Summary totals
+    # Revenue: auto-computed from members' plan and join date
     plan_prices = {'Basic': 999, 'Premium': 1999, 'Annual': 14999}
-    total_rev = sum(
-        plan_prices.get(m.get('plan', 'Basic'), 0)
-        for m in DB.members.find()
-    )
+    monthly = {}
+    members = list(DB.members.find())
+    for m in members:
+        plan  = m.get('plan', 'Basic')
+        price = plan_prices.get(plan, 0)
+        month = m.get('joined', '')[:7]  # "YYYY-MM"
+        if not month:
+            continue
+        if month not in monthly:
+            monthly[month] = {'Basic': 0, 'Premium': 0, 'Annual': 0}
+        monthly[month][plan] = monthly[month].get(plan, 0) + price
+
+    # Always include current month as live snapshot of all active members
+    current_month = date.today().strftime('%Y-%m')
+    monthly[current_month] = {'Basic': 0, 'Premium': 0, 'Annual': 0}
+    for m in members:
+        plan = m.get('plan', 'Basic')
+        monthly[current_month][plan] = monthly[current_month].get(plan, 0) + plan_prices.get(plan, 0)
+
+    rev_docs = [
+        {'month': k, 'basic': v['Basic'], 'premium': v['Premium'], 'annual': v['Annual']}
+        for k, v in sorted(monthly.items())
+    ]
+
+    total_rev = sum(plan_prices.get(m.get('plan', 'Basic'), 0) for m in members)
 
     return jsonify(popularity=popularity, revenue=rev_docs, total_revenue=total_rev)
 
@@ -227,12 +245,18 @@ def add_member():
     if not d.get('name'):
         return jsonify(ok=False, msg='Name required'), 400
     today = date.today().isoformat()
+    mid = 'M' + str(random.randint(100, 999))
     DB.members.insert_one({
-        'id': 'M' + str(random.randint(100, 999)),
+        'id': mid,
         'name': d['name'], 'email': d.get('email', ''),
         'phone': d.get('phone', ''), 'plan': d.get('plan', 'Basic'),
         'joined': today, 'lastVisit': today
     })
+    if d.get('username') and d.get('password'):
+        DB.member_users.insert_one({
+            'username': d['username'], 'password': d['password'],
+            'name': d['name'], 'memberId': mid
+        })
     return jsonify(ok=True)
 
 @app.route('/api/members/delete', methods=['POST'])

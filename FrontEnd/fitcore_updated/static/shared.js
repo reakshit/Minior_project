@@ -421,6 +421,8 @@ function showAddMember() {
       <div class="input-group"><label class="input-label">Phone</label><input class="input" id="nm_phone" placeholder="Phone number"></div>
       <div class="input-group"><label class="input-label">Plan</label>
         <select class="input" id="nm_plan"><option>Basic</option><option>Premium</option><option>Annual</option></select></div>
+      <div class="input-group"><label class="input-label">Username</label><input class="input" id="nm_username" placeholder="Login username"></div>
+      <div class="input-group"><label class="input-label">Password</label><input class="input" id="nm_password" type="password" placeholder="Login password"></div>
     </div>
     <div style="display:flex;gap:12px;margin-top:8px">
       <button class="btn btn-primary" onclick="confirmAddMember()">+ Add Member</button>
@@ -435,6 +437,8 @@ async function confirmAddMember() {
     name, email: document.getElementById('nm_email').value,
     phone: document.getElementById('nm_phone').value,
     plan:  document.getElementById('nm_plan').value,
+    username: document.getElementById('nm_username').value.trim(),
+    password: document.getElementById('nm_password').value,
   });
   closeModal();
   notify(`Member ${name} added!`, 'success');

@@ -2,11 +2,12 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from urllib.parse import quote_plus
 
+
 _user     = quote_plus("watchnline_db_user")
 _password = quote_plus("Team@rb@ak@akm")
 _uri      = f"mongodb+srv://{_user}:{_password}@rakshitcluster.bms2ure.mongodb.net/?appName=RakshitCluster"
 
-client = MongoClient(_uri, server_api=ServerApi('1'))
+client = MongoClient(_uri, server_api=ServerApi('1'),tls = True, tlsAllowInvalidCertificates=False)
 db     = client["fitcore"]
 
 # ── Collections ───────────────────────────────────────────────────────────────

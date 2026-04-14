@@ -285,8 +285,8 @@ async function renderRevenue() {
   const fmt = v => v >= 100000 ? '₹'+(v/100000).toFixed(2)+'L' : '₹'+(v/1000).toFixed(1)+'K';
 
   const html = `
-  <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-    <button class="btn btn-primary" onclick="showAddRevenue()">+ Add Monthly Record</button>
+  <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:16px">
+    <span style="font-size:12px;color:var(--muted)">📌 Revenue is auto-calculated from member memberships</span>
   </div>
   <div class="stat-grid">
     <div class="stat-card" style="--c:var(--accent)"><div class="stat-label">This Month</div><div class="stat-value">${fmt(thisMonth)}</div></div>
