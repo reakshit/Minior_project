@@ -155,6 +155,79 @@ def get_stats():
 
     return jsonify(popularity=popularity, revenue=rev_docs, total_revenue=total_rev)
 
+# ── API: REPORTS ──────────────────────────────────────────────────────────────
+@app.route('/api/reports')
+def get_reports():
+    today = date.today()
+    members  = list(DB.members.find())
+    trainers = list(DB.trainers.find())
+    bookings = list(DB.bookings.find())
+    feedback = list(DB.feedback.find())
+    schedule = list(DB.schedule.find())
+    plan_prices = {'Basic': 999, 'Premium': 1999, 'Annual': 14999}
+
+    # 1. Member Attendance: booking count per member
+    booking_counts = {}
+    for b in bookings:
+        mid = b.get('memberId')
+        booking_counts[mid] = booking_counts.get(mid, 0) + 1
+    attendance = sorted([
+        {'id': m['id'], 'name': m['name'], 'plan': m.get('plan','Basic'),
+         'bookings': booking_counts.get(m['id'], 0), 'lastVisit': m.get('lastVisit','')}
+        for m in members
+    ], key=lambda x: -x['bookings'])
+
+    # 2. Revenue & Billing: per member
+    billing = [
+        {'id': m['id'], 'name': m['name'], 'plan': m.get('plan','Basic'),
+         'amount': plan_prices.get(m.get('plan','Basic'), 0), 'joined': m.get('joined','')}
+        for m in members
+    ]
+
+    # 3. Inactive Members: no visit in 30+ days
+    inactive = []
+    for m in members:
+        lv = m.get('lastVisit', '')
+        if lv:
+            days = (today - date.fromisoformat(lv)).days
+            if days >= 30:
+                inactive.append({'id': m['id'], 'name': m['name'], 'plan': m.get('plan','Basic'),
+                                  'lastVisit': lv, 'daysSince': days})
+    inactive.sort(key=lambda x: -x['daysSince'])
+
+    # 4. Trainer Performance: avg rating + session count from feedback
+    trainer_stats = {t['id']: {'name': t['name'], 'specialty': t.get('specialty',''),
+                                'ratings': [], 'sessions': t.get('sessions', 0)} for t in trainers}
+    for f in feedback:
+        tid = f.get('trainerId')
+        if tid and tid in trainer_stats:
+            trainer_stats[tid]['ratings'].append(f.get('rating', 0))
+    trainer_perf = [
+        {'id': tid, 'name': v['name'], 'specialty': v['specialty'],
+         'sessions': v['sessions'],
+         'avgRating': round(sum(v['ratings'])/len(v['ratings']), 2) if v['ratings'] else 'N/A',
+         'reviews': len(v['ratings'])}
+        for tid, v in trainer_stats.items()
+    ]
+
+    # 5. Class Utilization: fill rate per class type
+    class_util = {}
+    for s in schedule:
+        c = s['class']
+        if c not in class_util:
+            class_util[c] = {'booked': 0, 'slots': 0, 'sessions': 0}
+        class_util[c]['booked']   += s.get('booked', 0)
+        class_util[c]['slots']    += s.get('slots', 1)
+        class_util[c]['sessions'] += 1
+    utilization = [
+        {'class': c, 'sessions': v['sessions'], 'booked': v['booked'], 'slots': v['slots'],
+         'fillRate': round(v['booked'] / v['slots'] * 100) if v['slots'] else 0}
+        for c, v in class_util.items()
+    ]
+
+    return jsonify(attendance=attendance, billing=billing, inactive=inactive,
+                   trainerPerf=trainer_perf, utilization=utilization)
+
 # ── API: REVENUE records ──────────────────────────────────────────────────────
 @app.route('/api/revenue', methods=['POST'])
 def add_revenue():

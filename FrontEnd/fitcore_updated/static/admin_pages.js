@@ -314,41 +314,81 @@ async function renderRevenue() {
   document.getElementById('contentArea').innerHTML = html;
 }
 
-function renderReports() {
-  return `
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">📋 Available Reports</div>
-      ${[
-        ['Member Attendance Report',   'Monthly summary of all member attendance',     'badge-accent'],
-        ['Revenue & Billing Report',   'Detailed revenue breakdown by class and plan', 'badge-success'],
-        ['Inactive Members Report',    'Members with no visit in 30+ days',            'badge-warning'],
-        ['Trainer Performance Report', 'Ratings and session counts per trainer',       'badge-info'],
-        ['Class Utilization Report',   'Slot fill rates per class type',               'badge-accent'],
-      ].map(([title,desc])=>`
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:13px">${title}</div>
-            <div style="font-size:12px;color:var(--muted)">${desc}</div>
-          </div>
-          <button class="btn btn-sm btn-ghost" onclick="notify('Report downloaded!','success')">⬇ Download</button>
-        </div>
+async function renderReports() {
+  const data = await (await fetch('/api/reports')).json();
+
+  const tables = {
+    'Member Attendance Report': {
+      desc: 'Booking count per member',
+      heads: ['ID','Name','Plan','Bookings','Last Visit'],
+      rows: data.attendance.map(r => [r.id, r.name,
+        `<span class="badge ${r.plan==='Premium'?'badge-accent':r.plan==='Annual'?'badge-success':'badge-info'}">${r.plan}</span>`,
+        `<strong>${r.bookings}</strong>`, r.lastVisit||'—'])
+    },
+    'Revenue & Billing Report': {
+      desc: 'Membership fee per member',
+      heads: ['ID','Name','Plan','Amount','Joined'],
+      rows: data.billing.map(r => [r.id, r.name,
+        `<span class="badge ${r.plan==='Premium'?'badge-accent':r.plan==='Annual'?'badge-success':'badge-info'}">${r.plan}</span>`,
+        `<strong>₹${r.amount.toLocaleString()}</strong>`, r.joined||'—'])
+    },
+    'Inactive Members Report': {
+      desc: 'Members with no visit in 30+ days',
+      heads: ['ID','Name','Plan','Last Visit','Days Inactive'],
+      rows: data.inactive.map(r => [r.id, r.name,
+        `<span class="badge badge-warning">${r.plan}</span>`,
+        r.lastVisit, `<span style="color:var(--danger)">${r.daysSince}d</span>`])
+    },
+    'Trainer Performance Report': {
+      desc: 'Ratings and sessions per trainer',
+      heads: ['ID','Name','Specialty','Sessions','Avg Rating','Reviews'],
+      rows: data.trainerPerf.map(r => [r.id, r.name, r.specialty||'—', r.sessions,
+        r.avgRating !== 'N/A' ? `<strong>${r.avgRating} ⭐</strong>` : '—', r.reviews])
+    },
+    'Class Utilization Report': {
+      desc: 'Slot fill rates per class type',
+      heads: ['Class','Sessions','Booked','Total Slots','Fill Rate'],
+      rows: data.utilization.map(r => [r.class, r.sessions, r.booked, r.slots,
+        `<strong style="color:${r.fillRate>=75?'var(--success)':r.fillRate>=40?'var(--warning)':'var(--danger)'}">${r.fillRate}%</strong>`])
+    }
+  };
+
+  const [firstName] = Object.keys(tables);
+  let active = firstName;
+
+  function tableHTML(key) {
+    const t = tables[key];
+    if (!t.rows.length) return `<div style="text-align:center;color:var(--muted);padding:32px">No data available.</div>`;
+    return `<div style="overflow-x:auto"><table>
+      <tr>${t.heads.map(h=>`<th>${h}</th>`).join('')}</tr>
+      ${t.rows.map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}
+    </table></div>`;
+  }
+
+  function render(activeKey) {
+    document.getElementById('reportContent').innerHTML = tableHTML(activeKey);
+    document.querySelectorAll('.report-tab-btn').forEach(b => {
+      b.style.background = b.dataset.key === activeKey ? 'var(--accent)' : '';
+      b.style.color      = b.dataset.key === activeKey ? '#000' : '';
+    });
+  }
+
+  const html = `
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      ${Object.entries(tables).map(([k])=>`
+        <button class="btn btn-sm btn-ghost report-tab-btn" data-key="${k}"
+          style="${k===active?'background:var(--accent);color:#000':''}"
+        >${k.replace(' Report','')}</button>
       `).join('')}
     </div>
-    <div class="card">
-      <div class="card-title">📊 Quick Stats</div>
-      ${[
-        ['Total Members',       MEMBERS.length,                                    'var(--accent)'],
-        ['Active Trainers',     TRAINERS.length,                                   'var(--accent3)'],
-        ['Weekly Sessions',     SCHEDULE.length,                                   'var(--success)'],
-        ['Open Complaints',     COMPLAINTS.filter(c=>c.status==='Pending').length, 'var(--warning)'],
-        ['Avg Feedback Rating', '4.75 ⭐',                                         'var(--accent2)'],
-      ].map(([label,val,col])=>`
-        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-          <span style="color:var(--muted)">${label}</span>
-          <span style="font-weight:700;color:${col}">${val}</span>
-        </div>
-      `).join('')}
-    </div>
+    <div id="reportContent">${tableHTML(active)}</div>
   </div>`;
+
+  document.getElementById('contentArea').innerHTML = html;
+
+  // wire up buttons properly after DOM insert
+  document.querySelectorAll('.report-tab-btn').forEach(b => {
+    b.addEventListener('click', () => render(b.dataset.key));
+  });
 }
