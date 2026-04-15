@@ -1,7 +1,10 @@
 // Admin page renderers
 
 async function renderAdminDashboard() {
-  const stats = await (await fetch('/api/stats')).json();
+  const [stats, topTrainers] = await Promise.all([
+    fetch('/api/stats').then(r => r.json()),
+    fetch('/api/top-trainers').then(r => r.json()),
+  ]);
   const popularity = stats.popularity;
   const totalRev = stats.total_revenue;
   const activeMem = MEMBERS.filter(m => Math.floor((new Date()-new Date(m.lastVisit))/(1000*86400)) <= 30).length;
@@ -48,7 +51,7 @@ async function renderAdminDashboard() {
     </div>
     <div class="card">
       <div class="card-title">🏆 Top Trainers</div>
-      ${TRAINERS.slice(0,4).map(t=>`
+      ${topTrainers.map(t=>`
         <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
           <div class="avatar" style="font-family:'DM Sans';font-size:14px;flex-shrink:0">${t.name.split(' ').map(w=>w[0]).join('')}</div>
           <div style="flex:1">
@@ -90,7 +93,7 @@ function renderTrainers() {
   return renderManage('trainers');
 }
 
-function renderManage(tab='members') {
+async function renderManage(tab='members') {
   const tabs = [
     { key:'members',  label:'👥 Members' },
     { key:'trainers', label:'💪 Trainers' },
@@ -100,7 +103,7 @@ function renderManage(tab='members') {
   ).join('');
 
   if (tab === 'members') {
-    return `
+    document.getElementById('contentArea').innerHTML = `
     <div style="display:flex;gap:8px;margin-bottom:20px">${tabBar}</div>
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <input class="input" placeholder="🔍 Search members..." style="flex:1;min-width:180px;max-width:300px" oninput="filterMembers(this.value)">
@@ -129,18 +132,27 @@ function renderManage(tab='members') {
         }).join('')}
       </table>
     </div>`;
+    return;
   }
 
-  // trainers tab
-  return `
+  // trainers tab — fetch live performance from DB
+  const perf = await fetch('/api/reports').then(r => r.json()).then(d => d.trainerPerf);
+  const perfMap = Object.fromEntries(perf.map(p => [p.id, p]));
+
+  document.getElementById('contentArea').innerHTML = `
   <div style="display:flex;gap:8px;margin-bottom:20px">${tabBar}</div>
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
     <button class="btn btn-primary" onclick="showAddTrainer()">+ Add Trainer</button>
   </div>
   <div class="card table-wrap" style="padding:0">
     <table>
-      <tr><th>ID</th><th>Name</th><th>Specialty</th><th>Rating</th><th>Sessions</th><th>Schedule</th><th>Actions</th></tr>
-      ${TRAINERS.map(t => `
+      <tr><th>ID</th><th>Name</th><th>Specialty</th><th>Rating</th><th>Sessions</th><th>Reviews</th><th>Schedule</th><th>Actions</th></tr>
+      ${TRAINERS.map(t => {
+        const p = perfMap[t.id] || {};
+        const rating = p.avgRating !== undefined && p.avgRating !== 'N/A' ? p.avgRating : '—';
+        const sessions = p.sessions ?? t.sessions;
+        const reviews = p.reviews ?? 0;
+        return `
         <tr>
           <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${t.id}</td>
           <td><div style="display:flex;align-items:center;gap:8px">
@@ -148,14 +160,16 @@ function renderManage(tab='members') {
             <strong>${t.name}</strong>
           </div></td>
           <td style="color:var(--muted)">${t.specialty}</td>
-          <td><span class="badge badge-accent">⭐ ${t.rating}</span></td>
-          <td>${t.sessions}</td>
+          <td><span class="badge badge-accent">⭐ ${rating}</span></td>
+          <td>${sessions}</td>
+          <td style="color:var(--muted)">${reviews} review${reviews!==1?'s':''}</td>
           <td>${SCHEDULE.filter(s=>s.trainerId===t.id).map(s=>'<span class="badge badge-info" style="margin:2px">'+DAYS[s.day]+' '+s.time+'</span>').join('')}</td>
           <td style="display:flex;gap:6px">
             <button class="btn btn-sm btn-ghost" onclick="viewTrainerSchedule('${t.id}')">📅</button>
             <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${t.id}','${t.name}')">🗑</button>
           </td>
-        </tr>`).join('')}
+        </tr>`;
+      }).join('')}
     </table>
   </div>`;
 }

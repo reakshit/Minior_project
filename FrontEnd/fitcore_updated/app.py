@@ -229,6 +229,38 @@ def get_reports():
                    trainerPerf=trainer_perf, utilization=utilization)
 
 # ── API: REVENUE records ──────────────────────────────────────────────────────
+@app.route('/api/top-trainers')
+def top_trainers():
+    trainers = list(DB.trainers.find())
+    feedback = list(DB.feedback.find())
+    schedule = list(DB.schedule.find())
+
+    session_counts = {}
+    for s in schedule:
+        tid = s.get('trainerId')
+        session_counts[tid] = session_counts.get(tid, 0) + 1
+
+    ratings = {}
+    for f in feedback:
+        tid = f.get('trainerId')
+        if tid:
+            ratings.setdefault(tid, []).append(f.get('rating', 0))
+
+    result = []
+    for t in trainers:
+        tid = t['id']
+        r_list = ratings.get(tid, [])
+        result.append({
+            'id': tid,
+            'name': t['name'],
+            'specialty': t.get('specialty', ''),
+            'sessions': session_counts.get(tid, 0),
+            'rating': round(sum(r_list) / len(r_list), 1) if r_list else t.get('rating', 0),
+        })
+
+    result.sort(key=lambda x: (-x['rating'], -x['sessions']))
+    return jsonify(result[:4])
+
 @app.route('/api/revenue', methods=['POST'])
 def add_revenue():
     d = request.json
